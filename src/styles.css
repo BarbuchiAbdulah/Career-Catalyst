@@ -1,0 +1,95 @@
+/* Design tokens — the single place to change L&C brand colors/type. */
+:root {
+  --color-orange: #E5703A;
+  --color-black: #231F20;
+  --color-gray-600: #5F6062;
+  --color-gray-400: #9FA1A4;
+  --color-bg: #ffffff;
+
+  --font-display: 'Fraunces', ui-serif, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-black);
+  background: var(--color-bg);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--color-black);
+  color: white;
+  padding: 0.5rem 1rem;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-orange);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-gray-400);
+}
+
+button[aria-pressed] {
+  font-family: var(--font-body);
+  border: 1px solid var(--color-gray-400);
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+button[aria-pressed='true'] {
+  background: var(--color-black);
+  color: white;
+  border-color: var(--color-black);
+}
+
+main {
+  padding: 1.5rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-gray-400);
+}
