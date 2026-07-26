@@ -30,19 +30,40 @@ student sees dashboard + gaps → staff see roster sorted by score → staff fla
   is the single source of truth. Student dashboard and staff roster both call it, so they can
   never disagree. If you change scoring, change it in that one function.
 - **Persistence is localStorage** (`src/lib/storage.ts`), falling back to seed data. No auth,
-  no accounts. Role is a UI toggle, not a login. This is intentional for the deadline.
+  no accounts. Role is a UI toggle, not a login. This is intentional for the deadline. The
+  storage KEY is versioned (`...:v2`) — bump it whenever the Entry/Student shape changes so
+  stale payloads don't crash the new model.
+
+## The four-year journey (the product's core idea)
+
+This app exists because L&C's current tools (uConnect + Handshake) are a *library* — a pile of
+resources a student reads and forgets. Career Catalyst is the student's own *space* that
+accumulates over four years. Everything below serves that idea:
+
+- **Every entry has a `date`.** The `<Timeline>` component groups entries by academic term
+  (Fall/Spring) into a vertical spine — the visible "here's everything you've built" history.
+- **Scoring is STAGE-AWARE.** `stageFor(grad)` derives first-year → senior from the grad year vs.
+  `ACADEMIC_YEAR` (a constant in scoring.ts — bump it each fall). Category targets scale by
+  `STAGE_FACTOR`, so the same entries read as "ahead" for a first-year and "behind" for a senior.
+  The staff roster shows a Stage column so a low score is interpreted fairly, not punitively.
+- **L&C's real 9 career paths** (`PATHS` in scoring.ts, `CareerPath` in types.ts) are an OPTIONAL
+  tag on skills/experiences. `dominantPath()` surfaces whether a student's work coheres toward a
+  direction. Paths are a tag layered ON TOP of the three readiness categories — they describe
+  *direction*; the categories describe *breadth*. Do not collapse one into the other.
+- **`headline`** on Student is the student's own stated goal — makes the space feel like theirs.
 
 ## File map
 
 ```
 src/
   lib/
-    types.ts      # Entry, Student, Readiness, Band — all shared types
-    scoring.ts    # CATS config, WEIGHT, scoreFor(), band() — THE scoring logic
-    seed.ts       # demo students + uid() helper
-    storage.ts    # localStorage load/save/reset
+    types.ts      # Entry, Student, Readiness, Band, CareerPath, Stage — shared types
+    scoring.ts    # CATS, WEIGHT, PATHS, scoreFor(), band(), stageFor(), dominantPath()
+    seed.ts       # demo students (with dates + path tags + headlines) + uid()
+    storage.ts    # localStorage load/save/reset (versioned key)
   components/
-    Readiness.tsx # <Dial> (the score ring) and <CatBars> — shared by both views
+    Readiness.tsx # <Dial>, <CatBars>, <StageBar> — shared by both views
+    Timeline.tsx  # <Timeline> — entries grouped by term into the four-year spine
   views/
     StudentView.tsx  # student dashboard + log form + entry list
     StaffView.tsx    # roster table + StaffDrill (individual student detail)
@@ -53,6 +74,11 @@ src/
 
 ## Design system (keep it consistent)
 
+- **Layout: a persistent left sidebar + content area** (see `App.tsx`, `.app`/`.sidebar`/`.content`).
+  Inspired by a "learning dashboard" reference the user liked (Coursue). The student view opens
+  with a top bar (search + identity), then an **orange greeting banner** whose signature element
+  is a **readiness ring wrapping the student's avatar** (`RingAvatar` in StudentView), then three
+  **stat cards** (one per category), then the timeline. Role is switched from the sidebar.
 - **Brand: real Lewis & Clark.** Colors are L&C's: orange `#E5703A`, black `#231F20`,
   grays `#5F6062` / `#9FA1A4`. Orange is the accent, used sparingly. Naming rule from L&C:
   use "Lewis & Clark" or "L&C" and "Pioneers" — never "LC" or "Lewis and Clark".
@@ -89,3 +115,4 @@ CI/CD, a backend or database. If asked to add one, confirm the deadline allows i
 - Add a search/filter box above the roster.
 - Persist per-student, keyed by id, and add a simple student picker.
 - Add unit tests for `scoreFor` and `band` (Vitest).
+
