@@ -1,23 +1,37 @@
-import type { Student } from './types'
-import { seedStudents } from './seed'
+import type { Student } from "./types";
+import { SEED_STUDENTS } from "./seed";
 
-const STORAGE_KEY = 'career-catalyst:students'
+const KEY = "career-catalyst:students:v3";
 
+// Load students from localStorage, falling back to seed data on first run
+// or if the stored payload is missing/corrupt.
 export function loadStudents(): Student[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return seedStudents
-    return JSON.parse(raw) as Student[]
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return SEED_STUDENTS;
+    const parsed = JSON.parse(raw) as Student[];
+    if (!Array.isArray(parsed) || parsed.length === 0) return SEED_STUDENTS;
+    return parsed;
   } catch {
-    return seedStudents
+    return SEED_STUDENTS;
   }
 }
 
 export function saveStudents(students: Student[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(students))
+  try {
+    localStorage.setItem(KEY, JSON.stringify(students));
+  } catch {
+    // Storage full or unavailable (e.g. private mode) — fail silently;
+    // the app still works in-memory for the session.
+  }
 }
 
 export function resetStudents(): Student[] {
-  localStorage.removeItem(STORAGE_KEY)
-  return seedStudents
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* ignore */
+  }
+  return SEED_STUDENTS;
 }
+
