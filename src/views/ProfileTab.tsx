@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import type { CareerPath, ContactRelationship, Entry, EntryType, Student } from "../lib/types";
+import type { CareerPath, Contact, ContactRelationship, Entry, Student } from "../lib/types";
 import {
   ADVANCED_AT,
   CATS,
@@ -19,6 +19,13 @@ function fmt(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function dateRange(e: { startDate: string; endDate?: string; ongoing: boolean }): string {
+  const start = fmt(e.startDate);
+  if (e.ongoing) return `${start} – Present`;
+  if (e.endDate) return `${start} – ${fmt(e.endDate)}`;
+  return start;
+}
+
 // A search-and-check multi-select with removable chips — used for majors and
 // minors, both of which can have more than one selection and a long real list.
 function MultiSelect({
@@ -33,12 +40,22 @@ function MultiSelect({
   onToggle: (value: string) => void;
 }) {
   const [q, setQ] = useState("");
+  // Only shows the search+checklist while actively picking — once there's a
+  // selection, it collapses to chips so the long real list doesn't linger.
+  const [editing, setEditing] = useState(selected.length === 0);
   const filtered = q.trim() ? options.filter((o) => o.toLowerCase().includes(q.toLowerCase())) : options;
   return (
-    <div>
-      <div style={{ fontWeight: 600, fontSize: 13, color: "var(--ink-soft)", marginBottom: 8 }}>{label}</div>
+    <div className="majorscard">
+      <div className="row-between" style={{ marginBottom: 8 }}>
+        <h3 style={{ margin: 0, fontSize: 15 }}>{label}</h3>
+        {selected.length > 0 && (
+          <button type="button" className="badge-sm-btn" onClick={() => setEditing((e) => !e)}>
+            {editing ? "Done" : `Edit ${label.toLowerCase()}`}
+          </button>
+        )}
+      </div>
       {selected.length > 0 && (
-        <div className="chiprow" style={{ marginBottom: 10 }}>
+        <div className="chiprow" style={{ marginBottom: editing ? 10 : 0 }}>
           {selected.map((s) => (
             <button type="button" className="pill chip-accent" key={s} onClick={() => onToggle(s)} aria-label={`Remove ${s}`}>
               {s} <span aria-hidden="true">×</span>
@@ -46,22 +63,26 @@ function MultiSelect({
           ))}
         </div>
       )}
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={`Search ${label.toLowerCase()}…`}
-        aria-label={`Search ${label.toLowerCase()}`}
-        style={{ width: "100%", marginBottom: 8 }}
-      />
-      <div className="multiselect-list">
-        {filtered.map((o) => (
-          <label key={o} className="multiselect-opt">
-            <input type="checkbox" checked={selected.includes(o)} onChange={() => onToggle(o)} />
-            {o}
-          </label>
-        ))}
-        {filtered.length === 0 && <p className="m" style={{ padding: "6px 2px" }}>No matches.</p>}
-      </div>
+      {!editing ? null : (
+        <>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={`Search ${label.toLowerCase()}…`}
+            aria-label={`Search ${label.toLowerCase()}`}
+            style={{ width: "100%", marginBottom: 8 }}
+          />
+          <div className="multiselect-list">
+            {filtered.map((o) => (
+              <label key={o} className="multiselect-opt">
+                <input type="checkbox" checked={selected.includes(o)} onChange={() => onToggle(o)} />
+                {o}
+              </label>
+            ))}
+            {filtered.length === 0 && <p className="m" style={{ padding: "6px 2px" }}>No matches.</p>}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -83,8 +104,6 @@ export function ProfileTab({
   onChange: (next: Student) => void;
 }) {
   const [interestsText, setInterestsText] = useState(student.interests.join(", "));
-  const [relFilter, setRelFilter] = useState<ContactRelationship | "all">("all");
-  const [pathFilter, setPathFilter] = useState<CareerPath | "all">("all");
 
   const [skillSort, setSkillSort] = useState<SortMode>("earliest");
   const [openEvidenceFor, setOpenEvidenceFor] = useState<string | null>(null);
@@ -97,13 +116,25 @@ export function ProfileTab({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Entry | null>(null);
 
-  const [type, setType] = useState<EntryType>("experience");
   const [title, setTitle] = useState("");
   const [meta, setMeta] = useState("");
   const [toolsText, setToolsText] = useState("");
-  const [date, setDate] = useState(today());
+  const [startDate, setStartDate] = useState(today());
+  const [endDate, setEndDate] = useState("");
+  const [ongoing, setOngoing] = useState(false);
   const [path, setPath] = useState<CareerPath>("");
-  const [relationship, setRelationship] = useState<ContactRelationship>("mentor");
+
+  const [relFilter, setRelFilter] = useState<ContactRelationship | "all">("all");
+  const [pathFilter, setPathFilter] = useState<CareerPath | "all">("all");
+  const [cName, setCName] = useState("");
+  const [cRelationship, setCRelationship] = useState<ContactRelationship>("mentor");
+  const [cPath, setCPath] = useState<CareerPath>("");
+  const [cEmail, setCEmail] = useState("");
+  const [cPhone, setCPhone] = useState("");
+  const [cLinkedin, setCLinkedin] = useState("");
+  const [cNote, setCNote] = useState("");
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editContactDraft, setEditContactDraft] = useState<Contact | null>(null);
 
   const liveRef = useRef<HTMLDivElement>(null);
   function announce(msg: string) {
@@ -174,29 +205,17 @@ export function ProfileTab({
     });
   }
 
-  // --- Experience / contacts ---------------------------------------------
+  // --- Experience ---------------------------------------------------------
 
-  const portfolio = student.entries.filter((e) => e.type === "experience");
-  const contacts = student.entries.filter((e) => e.type === "contact");
-
-  const sortedPortfolio = useMemo(() => {
-    const list = [...portfolio];
-    if (expSort === "earliest") list.sort((a, b) => a.date.localeCompare(b.date));
-    else if (expSort === "newest") list.sort((a, b) => b.date.localeCompare(a.date));
+  const sortedExperience = useMemo(() => {
+    const list = [...student.entries];
+    if (expSort === "earliest") list.sort((a, b) => a.startDate.localeCompare(b.startDate));
+    else if (expSort === "newest") list.sort((a, b) => b.startDate.localeCompare(a.startDate));
     else list.sort((a, b) => a.title.localeCompare(b.title));
     return list;
-  }, [portfolio, expSort]);
+  }, [student.entries, expSort]);
 
-  const shownContacts = contacts.filter(
-    (c) => (relFilter === "all" || c.relationship === relFilter) && (pathFilter === "all" || c.path === pathFilter)
-  );
-  const contactRelCounts = useMemo(() => {
-    const m = new Map<ContactRelationship, number>();
-    for (const c of contacts) if (c.relationship) m.set(c.relationship, (m.get(c.relationship) ?? 0) + 1);
-    return m;
-  }, [contacts]);
-
-  function add(ev: React.FormEvent) {
+  function addExperience(ev: React.FormEvent) {
     ev.preventDefault();
     const t = title.trim();
     if (!t) return;
@@ -206,13 +225,13 @@ export function ProfileTab({
       entries: [
         {
           id: uid(),
-          type,
           title: t,
           meta: meta.trim(),
-          date: date || today(),
+          startDate: startDate || today(),
+          endDate: ongoing ? undefined : endDate || undefined,
+          ongoing,
           path,
-          relationship: type === "contact" ? relationship : undefined,
-          tools: type === "experience" && tools.length ? tools : undefined,
+          tools: tools.length ? tools : undefined,
         },
         ...student.entries,
       ],
@@ -220,9 +239,11 @@ export function ProfileTab({
     setTitle("");
     setMeta("");
     setToolsText("");
-    announce(`Added ${CATS[type].label.toLowerCase()} entry: ${t}.`);
+    setEndDate("");
+    setOngoing(false);
+    announce(`Added experience: ${t}.`);
   }
-  function del(id: string) {
+  function delExperience(id: string) {
     const gone = student.entries.find((x) => x.id === id);
     onChange({ ...student, entries: student.entries.filter((x) => x.id !== id) });
     if (gone) announce(`Removed ${gone.title}.`);
@@ -236,10 +257,61 @@ export function ProfileTab({
     onChange({ ...student, entries: student.entries.map((x) => (x.id === editDraft.id ? editDraft : x)) });
     setEditingId(null);
     setEditDraft(null);
-    announce("Entry updated.");
+    announce("Experience updated.");
   }
 
   const skillTitles = new Set(student.skills.map((s) => s.title.toLowerCase()));
+
+  // --- Connections ---------------------------------------------------------
+
+  const shownContacts = student.contacts.filter(
+    (c) => (relFilter === "all" || c.relationship === relFilter) && (pathFilter === "all" || c.path === pathFilter)
+  );
+  const contactRelCounts = useMemo(() => {
+    const m = new Map<ContactRelationship, number>();
+    for (const c of student.contacts) m.set(c.relationship, (m.get(c.relationship) ?? 0) + 1);
+    return m;
+  }, [student.contacts]);
+
+  function addContact(ev: React.FormEvent) {
+    ev.preventDefault();
+    const n = cName.trim();
+    if (!n) return;
+    const contact: Contact = {
+      id: uid(),
+      name: n,
+      relationship: cRelationship,
+      path: cPath,
+      email: cEmail.trim() || undefined,
+      phone: cPhone.trim() || undefined,
+      linkedin: cLinkedin.trim() || undefined,
+      note: cNote.trim(),
+      date: today(),
+    };
+    onChange({ ...student, contacts: [contact, ...student.contacts] });
+    setCName("");
+    setCEmail("");
+    setCPhone("");
+    setCLinkedin("");
+    setCNote("");
+    announce(`Added connection: ${n}.`);
+  }
+  function delContact(id: string) {
+    const gone = student.contacts.find((c) => c.id === id);
+    onChange({ ...student, contacts: student.contacts.filter((c) => c.id !== id) });
+    if (gone) announce(`Removed ${gone.name}.`);
+  }
+  function startEditContact(c: Contact) {
+    setEditingContactId(c.id);
+    setEditContactDraft({ ...c });
+  }
+  function saveEditContact() {
+    if (!editContactDraft) return;
+    onChange({ ...student, contacts: student.contacts.map((c) => (c.id === editContactDraft.id ? editContactDraft : c)) });
+    setEditingContactId(null);
+    setEditContactDraft(null);
+    announce("Connection updated.");
+  }
 
   return (
     <>
@@ -250,6 +322,16 @@ export function ProfileTab({
       {/* Identity */}
       <section className="sec" aria-labelledby="id-h">
         <div className="sec-head"><h2 id="id-h">About you</h2></div>
+        <div className="profile-header">
+          <div className="profileavatar" aria-hidden="true">
+            {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : student.name.charAt(0) || "?"}
+          </div>
+          <div>
+            <div className="profile-header-name">{student.name || "You"}</div>
+            <div className="profile-header-sub">Class of {student.grad || "—"}</div>
+          </div>
+          <p className="profile-header-hint">Change your photo in Settings.</p>
+        </div>
         <div className="profile-grid" style={{ marginBottom: 16 }}>
           <div className="field grow">
             <label htmlFor="p-headline">Your goal / headline</label>
@@ -318,7 +400,7 @@ export function ProfileTab({
               return (
                 <div className="skillcard" key={s.id}>
                   <div className="row-between">
-                    <h3>{s.title}{s.path && <span className="pathchip" style={{ marginLeft: 8 }}>{pathLabel(s.path)}</span>}</h3>
+                    <h3>{s.title}{s.path && <span className="pathchip">{pathLabel(s.path)}</span>}</h3>
                     <span className="proflevel">{SKILL_LEVEL_LABEL[level]}</span>
                   </div>
                   <div className="track"><i style={{ width: pct + "%" }} /></div>
@@ -357,44 +439,38 @@ export function ProfileTab({
         )}
       </section>
 
-      {/* Log an entry: experience / contact */}
+      {/* Log experience */}
       <section className="sec" aria-labelledby="log-h">
-        <div className="sec-head"><h2 id="log-h">Log an entry</h2></div>
-        <form className="logbar" onSubmit={add}>
-          <div className="field">
-            <label htmlFor="etype">Type</label>
-            <select id="etype" value={type} onChange={(e) => setType(e.target.value as EntryType)}>
-              <option value="experience">Experience</option>
-              <option value="contact">Network</option>
-            </select>
-          </div>
+        <div className="sec-head"><h2 id="log-h">Log experience</h2></div>
+        <form className="logbar" onSubmit={addExperience}>
           <div className="field grow">
-            <label htmlFor="etitle">{type === "contact" ? "Who" : "What"}</label>
-            <input id="etitle" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={CATS[type].ex} aria-describedby="ehelp" />
+            <label htmlFor="etitle">What</label>
+            <input id="etitle" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={CATS.experience.ex} aria-describedby="ehelp" />
           </div>
           <div className="field grow">
             <label htmlFor="emeta">Detail <span style={{ fontWeight: 400 }}>(optional)</span></label>
             <input id="emeta" value={meta} onChange={(e) => setMeta(e.target.value)} placeholder="Where, when, or context" />
           </div>
-          <div className="field">
-            <label htmlFor="edate">When</label>
-            <input id="edate" type="date" value={date} onChange={(e) => setDate(e.target.value)} max={today()} />
+          <div className="field grow">
+            <label htmlFor="estart" className="row-between">
+              <span>Started – Ended</span>
+              <span className="inline-check">
+                <input type="checkbox" checked={ongoing} onChange={(e) => setOngoing(e.target.checked)} />
+                Present
+              </span>
+            </label>
+            <div className="daterange-row">
+              <input id="estart" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} max={today()} />
+              <span aria-hidden="true">–</span>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} disabled={ongoing} aria-label="Ended" />
+            </div>
           </div>
-          {type === "contact" ? (
-            <div className="field">
-              <label htmlFor="erel">Relationship</label>
-              <select id="erel" value={relationship} onChange={(e) => setRelationship(e.target.value as ContactRelationship)}>
-                {RELATIONSHIPS.map((r) => <option key={r} value={r}>{RELATIONSHIP_LABEL[r]}</option>)}
-              </select>
-            </div>
-          ) : (
-            <div className="field grow">
-              <label htmlFor="etools">Tools/tech used <span style={{ fontWeight: 400 }}>(optional)</span></label>
-              <input id="etools" value={toolsText} onChange={(e) => setToolsText(e.target.value)} placeholder="e.g. Python, Figma" />
-            </div>
-          )}
+          <div className="field grow">
+            <label htmlFor="etools">Tools/tech used <span style={{ fontWeight: 400 }}>(optional)</span></label>
+            <input id="etools" value={toolsText} onChange={(e) => setToolsText(e.target.value)} placeholder="e.g. Python, Figma" />
+          </div>
           <div className="field">
-            <label htmlFor="epath">{type === "contact" ? "Industry" : "Career path"} <span style={{ fontWeight: 400 }}>(optional)</span></label>
+            <label htmlFor="epath">Career path <span style={{ fontWeight: 400 }}>(optional)</span></label>
             <select id="epath" value={path} onChange={(e) => setPath(e.target.value as CareerPath)}>
               <option value="">— none —</option>
               {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
@@ -402,7 +478,7 @@ export function ProfileTab({
           </div>
           <button className="btn" type="submit">Add entry</button>
         </form>
-        <p id="ehelp" className="sr-only">{CATS[type].help}</p>
+        <p id="ehelp" className="sr-only">{CATS.experience.help}</p>
       </section>
 
       {/* Experience */}
@@ -416,16 +492,25 @@ export function ProfileTab({
             <option value="az">A–Z</option>
           </select>
         </div>
-        {sortedPortfolio.length === 0 ? (
+        {sortedExperience.length === 0 ? (
           <div className="empty">Nothing logged yet.</div>
         ) : (
           <ul className="entries">
-            {sortedPortfolio.map((e) =>
+            {sortedExperience.map((e) =>
               editingId === e.id && editDraft ? (
                 <li key={e.id} className="editrow">
                   <input value={editDraft.title} onChange={(ev) => setEditDraft({ ...editDraft, title: ev.target.value })} placeholder="What" />
                   <input value={editDraft.meta} onChange={(ev) => setEditDraft({ ...editDraft, meta: ev.target.value })} placeholder="Detail" />
-                  <input type="date" value={editDraft.date} onChange={(ev) => setEditDraft({ ...editDraft, date: ev.target.value })} max={today()} />
+                  <input type="date" value={editDraft.startDate} onChange={(ev) => setEditDraft({ ...editDraft, startDate: ev.target.value })} max={today()} />
+                  <input type="date" value={editDraft.endDate ?? ""} disabled={editDraft.ongoing} onChange={(ev) => setEditDraft({ ...editDraft, endDate: ev.target.value })} />
+                  <label className="inline-check">
+                    <input type="checkbox" checked={editDraft.ongoing} onChange={(ev) => setEditDraft({ ...editDraft, ongoing: ev.target.checked })} />
+                    Still doing this
+                  </label>
+                  <select className="editrow-select" value={editDraft.path} onChange={(ev) => setEditDraft({ ...editDraft, path: ev.target.value as CareerPath })}>
+                    <option value="">— no career path —</option>
+                    {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+                  </select>
                   <input
                     value={(editDraft.tools ?? []).join(", ")}
                     onChange={(ev) => setEditDraft({ ...editDraft, tools: ev.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
@@ -436,7 +521,7 @@ export function ProfileTab({
                 </li>
               ) : (
                 <li key={e.id}>
-                  <span className={"tag " + e.type}>{CATS.experience.label}</span>
+                  <span className="tag experience">{dateRange(e)}</span>
                   <span className="entry-main">
                     <span className="t">{e.title}</span>
                     {e.meta && <span className="m">{e.meta}</span>}
@@ -450,7 +535,7 @@ export function ProfileTab({
                     )}
                   </span>
                   <button className="badge-sm-btn" onClick={() => startEdit(e)}>Edit</button>
-                  <button className="del" onClick={() => del(e.id)} aria-label={`Remove ${e.title}`}>Remove</button>
+                  <button className="del" onClick={() => delExperience(e.id)} aria-label={`Remove ${e.title}`}>Remove</button>
                 </li>
               )
             )}
@@ -458,15 +543,55 @@ export function ProfileTab({
         )}
       </section>
 
-      {/* Connections */}
+      {/* Connections: their own entity, not a repurposed experience row */}
+      <section className="sec" aria-labelledby="conn-log-h">
+        <div className="sec-head"><h2 id="conn-log-h">Add a connection</h2></div>
+        <form className="logbar" onSubmit={addContact}>
+          <div className="field grow">
+            <label htmlFor="c-name">Name</label>
+            <input id="c-name" value={cName} onChange={(e) => setCName(e.target.value)} placeholder="e.g. Alum in your field" />
+          </div>
+          <div className="field">
+            <label htmlFor="c-rel">Relationship</label>
+            <select id="c-rel" value={cRelationship} onChange={(e) => setCRelationship(e.target.value as ContactRelationship)}>
+              {RELATIONSHIPS.map((r) => <option key={r} value={r}>{RELATIONSHIP_LABEL[r]}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="c-path">Industry <span style={{ fontWeight: 400 }}>(optional)</span></label>
+            <select id="c-path" value={cPath} onChange={(e) => setCPath(e.target.value as CareerPath)}>
+              <option value="">— none —</option>
+              {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </div>
+          <div className="field grow">
+            <label htmlFor="c-email">Email <span style={{ fontWeight: 400 }}>(optional)</span></label>
+            <input id="c-email" type="email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} placeholder="name@example.com" />
+          </div>
+          <div className="field grow">
+            <label htmlFor="c-phone">Phone <span style={{ fontWeight: 400 }}>(optional)</span></label>
+            <input id="c-phone" value={cPhone} onChange={(e) => setCPhone(e.target.value)} placeholder="(503) 555-0100" />
+          </div>
+          <div className="field grow">
+            <label htmlFor="c-linkedin">LinkedIn <span style={{ fontWeight: 400 }}>(optional)</span></label>
+            <input id="c-linkedin" value={cLinkedin} onChange={(e) => setCLinkedin(e.target.value)} placeholder="linkedin.com/in/…" />
+          </div>
+          <div className="field grow">
+            <label htmlFor="c-note">Note <span style={{ fontWeight: 400 }}>(optional)</span></label>
+            <input id="c-note" value={cNote} onChange={(e) => setCNote(e.target.value)} placeholder="How you know them, what you talked about" />
+          </div>
+          <button className="btn" type="submit">Add connection</button>
+        </form>
+      </section>
+
       <section className="sec" aria-labelledby="conn-h">
         <div className="sec-head">
           <h2 id="conn-h">Connections</h2>
-          <span className="count">{shownContacts.length} of {contacts.length}</span>
+          <span className="count">{shownContacts.length} of {student.contacts.length}</span>
         </div>
         <div className="filterrow" role="group" aria-label="Filter connections by relationship">
           <button className={"filterchip" + (relFilter === "all" ? " active" : "")} aria-pressed={relFilter === "all"} onClick={() => setRelFilter("all")}>
-            All ({contacts.length})
+            All ({student.contacts.length})
           </button>
           {RELATIONSHIPS.filter((r) => contactRelCounts.has(r)).map((r) => (
             <button key={r} className={"filterchip" + (relFilter === r ? " active" : "")} aria-pressed={relFilter === r} onClick={() => setRelFilter(r)}>
@@ -482,20 +607,47 @@ export function ProfileTab({
           </select>
         </div>
         {shownContacts.length === 0 ? (
-          <div className="empty">{contacts.length === 0 ? "No connections logged yet — add one above." : "No connections match this filter."}</div>
+          <div className="empty">{student.contacts.length === 0 ? "No connections logged yet — add one above." : "No connections match this filter."}</div>
         ) : (
           <ul className="entries">
-            {shownContacts.map((e) => (
-              <li key={e.id}>
-                <span className="tag contact">{e.relationship ? RELATIONSHIP_LABEL[e.relationship] : "Contact"}</span>
-                <span className="entry-main">
-                  <span className="t">{e.title}</span>
-                  {e.meta && <span className="m">{e.meta}</span>}
-                  {e.path && <span className="pathchip">{pathLabel(e.path)}</span>}
-                </span>
-                <button className="del" onClick={() => del(e.id)} aria-label={`Remove ${e.title}`}>Remove</button>
-              </li>
-            ))}
+            {shownContacts.map((c) =>
+              editingContactId === c.id && editContactDraft ? (
+                <li key={c.id} className="editrow">
+                  <input value={editContactDraft.name} onChange={(ev) => setEditContactDraft({ ...editContactDraft, name: ev.target.value })} placeholder="Name" />
+                  <select className="editrow-select" value={editContactDraft.relationship} onChange={(ev) => setEditContactDraft({ ...editContactDraft, relationship: ev.target.value as ContactRelationship })}>
+                    {RELATIONSHIPS.map((r) => <option key={r} value={r}>{RELATIONSHIP_LABEL[r]}</option>)}
+                  </select>
+                  <select className="editrow-select" value={editContactDraft.path} onChange={(ev) => setEditContactDraft({ ...editContactDraft, path: ev.target.value as CareerPath })}>
+                    <option value="">— no industry —</option>
+                    {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+                  </select>
+                  <input value={editContactDraft.email ?? ""} onChange={(ev) => setEditContactDraft({ ...editContactDraft, email: ev.target.value })} placeholder="Email" />
+                  <input value={editContactDraft.phone ?? ""} onChange={(ev) => setEditContactDraft({ ...editContactDraft, phone: ev.target.value })} placeholder="Phone" />
+                  <input value={editContactDraft.linkedin ?? ""} onChange={(ev) => setEditContactDraft({ ...editContactDraft, linkedin: ev.target.value })} placeholder="LinkedIn" />
+                  <input value={editContactDraft.note} onChange={(ev) => setEditContactDraft({ ...editContactDraft, note: ev.target.value })} placeholder="Note" />
+                  <button className="btn btn-sm" onClick={saveEditContact}>Save</button>
+                  <button className="btn btn-sm btn-outline" onClick={() => { setEditingContactId(null); setEditContactDraft(null); }}>Cancel</button>
+                </li>
+              ) : (
+                <li key={c.id}>
+                  <span className="tag contact">{RELATIONSHIP_LABEL[c.relationship]}</span>
+                  <span className="entry-main">
+                    <span className="t">{c.name}</span>
+                    {c.note && <span className="m">{c.note}</span>}
+                    {c.path && <span className="pathchip">{pathLabel(c.path)}</span>}
+                    {(c.email || c.phone || c.linkedin) && (
+                      <span className="contactinfo">
+                        {c.email && <span>{c.email}</span>}
+                        {c.phone && <span>{c.phone}</span>}
+                        {c.linkedin && <span>{c.linkedin}</span>}
+                      </span>
+                    )}
+                  </span>
+                  <button className="badge-sm-btn" onClick={() => startEditContact(c)}>Edit</button>
+                  <button className="del" onClick={() => delContact(c.id)} aria-label={`Remove ${c.name}`}>Remove</button>
+                </li>
+              )
+            )}
           </ul>
         )}
       </section>

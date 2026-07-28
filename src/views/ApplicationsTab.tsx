@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { AppSource, AppStatus, Application, CareerPath, Student } from "../lib/types";
-import { CAREER_CENTER, JOBS } from "../lib/content";
+import { CAREER_CENTER, EXTERNAL_BOARDS, JOBS } from "../lib/content";
 import { PATHS, pathLabel } from "../lib/scoring";
 import { uid } from "../lib/seed";
 
@@ -28,14 +28,39 @@ function daysUntil(iso: string): number | null {
   return Math.round(ms / 86400000);
 }
 
-// Deliberately a single ink+orange monogram treatment (same as the app's other
-// avatars), not a rainbow of per-company colors — real logos would mean
-// hot-linking trademarked images this app can't host.
+// Pulls a bare domain out of whatever URL the student pastes, so a custom
+// application gets a real logo lookup automatically — no extra field needed.
+function hostnameOf(url: string): string | undefined {
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  try {
+    const withProto = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    return new URL(withProto).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
+
+// Ink+orange monogram fallback — used whenever there's no real domain to look
+// a logo up from (student-added custom applications) or the logo fails to load.
 function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return "?";
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+// Real logo when we know the org's domain (a small public favicon-style
+// lookup, not something this app hosts), falling back to the monogram the
+// instant it 404s — so a missing/broken logo never breaks the card.
+function OrgLogo({ name, domain }: { name: string; domain?: string }) {
+  const [broken, setBroken] = useState(false);
+  if (!domain || broken) return <span className="monogram">{initials(name)}</span>;
+  return (
+    <span className="monogram monogram-img">
+      <img src={`https://logo.clearbit.com/${domain}`} alt="" onError={() => setBroken(true)} />
+    </span>
+  );
 }
 
 function DeadlineChip({ deadline, status }: { deadline: string; status: AppStatus }) {
@@ -87,6 +112,7 @@ export function ApplicationsTab({
       id: uid(),
       company: j.org,
       role: j.title,
+      domain: j.domain,
       link: "",
       source: j.source,
       deadline: "",
@@ -103,7 +129,7 @@ export function ApplicationsTab({
     const c = company.trim();
     const r = role.trim();
     if (!c || !r) return;
-    const app: Application = { id: uid(), company: c, role: r, link: link.trim(), source, deadline, status: "saved", notes: "", date: today() };
+    const app: Application = { id: uid(), company: c, role: r, domain: hostnameOf(link), link: link.trim(), source, deadline, status: "saved", notes: "", date: today() };
     onChange({ ...student, applications: [app, ...student.applications] });
     setCompany("");
     setRole("");
@@ -126,7 +152,8 @@ export function ApplicationsTab({
   }
   function saveEdit() {
     if (!editDraft) return;
-    onChange({ ...student, applications: student.applications.map((a) => (a.id === editDraft.id ? editDraft : a)) });
+    const updated = { ...editDraft, domain: hostnameOf(editDraft.link) ?? editDraft.domain };
+    onChange({ ...student, applications: student.applications.map((a) => (a.id === updated.id ? updated : a)) });
     setEditingId(null);
     setEditDraft(null);
     announce("Application updated.");
@@ -170,6 +197,13 @@ export function ApplicationsTab({
               (uConnect) →
             </a>
           </p>
+          <div className="boardrow" aria-label="More places to look">
+            {EXTERNAL_BOARDS.map((b) => (
+              <a key={b.id} href={b.url} target="_blank" rel="noreferrer" className="boardlink">
+                {b.label} <span aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </div>
           <div className="filterrow" role="group" aria-label="Filter by source">
             {(["all", "on-campus", "external"] as const).map((s) => (
               <button key={s} className={"filterchip" + (sourceFilter === s ? " active" : "")} aria-pressed={sourceFilter === s} onClick={() => setSourceFilter(s)}>
@@ -190,16 +224,23 @@ export function ApplicationsTab({
               return (
                 <div className="jobcard" key={j.id}>
                   <div className="row-between" style={{ width: "100%" }}>
-                    <span className="monogram">{initials(j.org)}</span>
+                    <OrgLogo name={j.org} domain={j.domain} />
                     <span className={"tag " + (j.source === "on-campus" ? "experience" : "skill")}>{j.source === "on-campus" ? "On-campus" : "External"}</span>
                   </div>
                   <h3>{j.title}</h3>
                   <p className="jobcard-org">{j.org} · {j.location}</p>
                   <p className="jobcard-blurb">{j.blurb}</p>
                   {j.path && <span className="pathchip">{pathLabel(j.path)}</span>}
-                  <button className="btn btn-sm" disabled={saved} onClick={() => saveJob(j)}>
-                    {saved ? "Saved" : "Save to my applications"}
-                  </button>
+                  <div className="row" style={{ gap: 12, marginTop: "auto" }}>
+                    <button className="btn btn-sm" disabled={saved} onClick={() => saveJob(j)}>
+                      {saved ? "Saved" : "Save to my applications"}
+                    </button>
+                    {j.domain && (
+                      <a href={`https://${j.domain}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline">
+                        Read more
+                      </a>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -259,23 +300,25 @@ export function ApplicationsTab({
                     </li>
                   ) : (
                     <li key={a.id} className="approw">
-                      <span className="monogram" aria-hidden="true">{initials(a.company)}</span>
+                      <OrgLogo name={a.company} domain={a.domain} />
                       <span className="entry-main">
                         <span className="t">{a.role}</span>
                         <span className="m">{a.company} · {a.source === "on-campus" ? "On-campus" : "External"}</span>
                       </span>
                       <span className="approw-deadline"><DeadlineChip deadline={a.deadline} status={a.status} /></span>
                       <span className={"statusdot " + STATUS_CLASS[a.status]} aria-hidden="true" />
-                      <select aria-label={`Status for ${a.role} at ${a.company}`} value={a.status} onChange={(e) => setStatus(a.id, e.target.value as AppStatus)}>
+                      <select className="editrow-select" style={{ flex: "none", width: 130 }} aria-label={`Status for ${a.role} at ${a.company}`} value={a.status} onChange={(e) => setStatus(a.id, e.target.value as AppStatus)}>
                         {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                       </select>
-                      {a.link && (
-                        <a href={a.link.startsWith("http") ? a.link : `https://${a.link}`} target="_blank" rel="noopener noreferrer" className="linkicon" aria-label={`Open posting for ${a.role} at ${a.company}`}>
-                          ↗
-                        </a>
-                      )}
-                      <button className="badge-sm-btn" onClick={() => startEdit(a)}>Edit</button>
-                      <button className="del" onClick={() => del(a.id)} aria-label={`Remove ${a.role} at ${a.company}`}>Remove</button>
+                      <span className="approw-actions">
+                        {a.link && (
+                          <a href={a.link.startsWith("http") ? a.link : `https://${a.link}`} target="_blank" rel="noopener noreferrer" className="linkicon" aria-label={`Open posting for ${a.role} at ${a.company}`}>
+                            ↗
+                          </a>
+                        )}
+                        <button className="badge-sm-btn" onClick={() => startEdit(a)}>Edit</button>
+                        <button className="del" onClick={() => del(a.id)} aria-label={`Remove ${a.role} at ${a.company}`}>Remove</button>
+                      </span>
                     </li>
                   )
                 )}

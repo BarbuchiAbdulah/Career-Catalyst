@@ -149,7 +149,7 @@ export default function App() {
   const role = me.role;
 
   // Sidebar "me" mini-score, so the shell feels personal like the reference.
-  const meScore = scoreFor(me.skills, me.entries, me.grad).score;
+  const meScore = scoreFor(me.skills, me.entries, me.contacts, me.grad).score;
   const meBand = band(meScore);
 
   return (
@@ -176,7 +176,9 @@ export default function App() {
               ))}
               <p className="side-label">You</p>
               <div className="side-me">
-                <div className="side-me-avatar" aria-hidden="true">{me.name.charAt(0) || "?"}</div>
+                <div className="side-me-avatar" aria-hidden="true">
+                  {me.avatarUrl ? <img src={me.avatarUrl} alt="" /> : me.name.charAt(0) || "?"}
+                </div>
                 <div className="side-me-text">
                   <span className="side-me-name">{me.name || "You"}</span>
                   <span className="side-me-sub" style={{ color: bandColor(meBand.key) }}>
@@ -203,9 +205,34 @@ export default function App() {
         </div>
       </aside>
 
+      <nav className="bottomnav" aria-label="Main mobile">
+        {role === "student" ? (
+          STUDENT_NAV.map((item) => (
+            <button
+              key={item.key}
+              className={"bottomnav-tab" + (!showSettings && studentPage === item.key ? " active" : "")}
+              onClick={() => goToPage(item.key)}
+              aria-current={!showSettings && studentPage === item.key}
+            >
+              <Icon d={item.icon} />
+              <span>{item.label === "My dashboard" ? "Dashboard" : item.label === "Resources & Events" ? "Resources" : item.label}</span>
+            </button>
+          ))
+        ) : (
+          <button className={"bottomnav-tab" + (!showSettings ? " active" : "")} onClick={() => setShowSettings(false)} aria-current={!showSettings}>
+            <Icon d={I.staff} />
+            <span>Roster</span>
+          </button>
+        )}
+        <button className={"bottomnav-tab" + (showSettings ? " active" : "")} onClick={openSettings} aria-current={showSettings}>
+          <Icon d={I.cog} />
+          <span>Settings</span>
+        </button>
+      </nav>
+
       <main id="main" className="content">
         {showSettings ? (
-          <SettingsView email={session.user.email ?? ""} onSignOut={signOut} onReset={reset} />
+          <SettingsView email={session.user.email ?? ""} onSignOut={signOut} onReset={reset} student={me} onChange={updateMe} />
         ) : role === "student" ? (
           studentPage === "dashboard" ? (
             <DashboardTab student={me} onChange={updateMe} onNavigate={goToPage} />

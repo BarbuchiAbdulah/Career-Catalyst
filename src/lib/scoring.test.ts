@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ACADEMIC_YEAR, WEIGHT, band, scoreFor, stageFor, targetFor } from "./scoring";
-import type { Entry, Skill } from "./types";
+import type { Contact, Entry, Skill } from "./types";
 
 describe("stageFor", () => {
   it("maps grad years around ACADEMIC_YEAR to the right stage", () => {
@@ -21,8 +21,8 @@ describe("WEIGHT", () => {
 });
 
 describe("scoreFor", () => {
-  it("scores 0 with no skills or entries", () => {
-    const { score, per } = scoreFor([], [], String(ACADEMIC_YEAR));
+  it("scores 0 with no skills, entries, or contacts", () => {
+    const { score, per } = scoreFor([], [], [], String(ACADEMIC_YEAR));
     expect(score).toBe(0);
     expect(per.skill.n).toBe(0);
     expect(per.experience.n).toBe(0);
@@ -41,37 +41,35 @@ describe("scoreFor", () => {
       path: "",
       evidence: [],
     }));
-    const entries: Entry[] = [
-      ...Array.from({ length: expTarget + 2 }, (_, i) => ({
-        id: `exp${i}`,
-        type: "experience" as const,
-        title: `Experience ${i}`,
-        meta: "",
-        date: "2026-01-01",
-        path: "" as const,
-      })),
-      ...Array.from({ length: contactTarget + 2 }, (_, i) => ({
-        id: `con${i}`,
-        type: "contact" as const,
-        title: `Contact ${i}`,
-        meta: "",
-        date: "2026-01-01",
-        path: "" as const,
-      })),
-    ];
+    const entries: Entry[] = Array.from({ length: expTarget + 2 }, (_, i) => ({
+      id: `exp${i}`,
+      title: `Experience ${i}`,
+      meta: "",
+      startDate: "2026-01-01",
+      ongoing: false,
+      path: "" as const,
+    }));
+    const contacts: Contact[] = Array.from({ length: contactTarget + 2 }, (_, i) => ({
+      id: `con${i}`,
+      name: `Contact ${i}`,
+      relationship: "mentor" as const,
+      note: "",
+      date: "2026-01-01",
+      path: "" as const,
+    }));
 
-    const { score } = scoreFor(skills, entries, grad);
+    const { score } = scoreFor(skills, entries, contacts, grad);
     expect(score).toBe(100);
   });
 
   it("is stage-aware: the same entry counts score lower for a senior than a first-year", () => {
     const skills: Skill[] = [{ id: "s1", title: "Python", path: "", evidence: [] }];
     const entries: Entry[] = [
-      { id: "e1", type: "experience", title: "Internship", meta: "", date: "2026-01-01", path: "" },
-      { id: "e2", type: "contact", title: "Mentor", meta: "", date: "2026-01-01", path: "" },
+      { id: "e1", title: "Internship", meta: "", startDate: "2026-01-01", ongoing: false, path: "" },
     ];
-    const firstYear = scoreFor(skills, entries, String(ACADEMIC_YEAR + 3));
-    const senior = scoreFor(skills, entries, String(ACADEMIC_YEAR));
+    const contacts: Contact[] = [{ id: "c1", name: "Mentor", relationship: "mentor", note: "", date: "2026-01-01", path: "" }];
+    const firstYear = scoreFor(skills, entries, contacts, String(ACADEMIC_YEAR + 3));
+    const senior = scoreFor(skills, entries, contacts, String(ACADEMIC_YEAR));
     expect(senior.score).toBeLessThan(firstYear.score);
   });
 });

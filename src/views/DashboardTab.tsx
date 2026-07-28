@@ -3,6 +3,7 @@ import type { Student } from "../lib/types";
 import {
   CATS,
   ORDER,
+  RELATIONSHIP_LABEL,
   STAGE_LABEL,
   band,
   bandColor,
@@ -31,7 +32,7 @@ function daysUntil(iso: string): number | null {
 }
 
 // The signature element: readiness ring wrapping the student's avatar.
-function RingAvatar({ score, initial, size = 128 }: { score: number; initial: string; size?: number }) {
+function RingAvatar({ score, initial, avatarUrl, size = 128 }: { score: number; initial: string; avatarUrl?: string; size?: number }) {
   const b = band(score);
   const r = size / 2 - 7;
   const c = 2 * Math.PI * r;
@@ -44,7 +45,9 @@ function RingAvatar({ score, initial, size = 128 }: { score: number; initial: st
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off}
           style={{ transition: "stroke-dashoffset .8s cubic-bezier(.2,.7,.2,1)" }} />
       </svg>
-      <div className="ringavatar-face" aria-hidden="true">{initial}</div>
+      <div className="ringavatar-face" aria-hidden="true">
+        {avatarUrl ? <img src={avatarUrl} alt="" /> : initial}
+      </div>
       <span className="ringavatar-badge" style={{ background: bandColor(b.key) }}>{score}%</span>
     </div>
   );
@@ -73,11 +76,18 @@ export function DashboardTab({
   }
 
   const { score, per, stage } = useMemo(
-    () => scoreFor(student.skills, student.entries, student.grad),
-    [student.skills, student.entries, student.grad]
+    () => scoreFor(student.skills, student.entries, student.contacts, student.grad),
+    [student.skills, student.entries, student.contacts, student.grad]
   );
   const b = band(score);
-  const dom = useMemo(() => dominantPath(student.skills, student.entries), [student.skills, student.entries]);
+  const dom = useMemo(
+    () => dominantPath(student.skills, student.entries, student.contacts),
+    [student.skills, student.entries, student.contacts]
+  );
+  const recentContacts = useMemo(
+    () => [...student.contacts].sort((a, c) => c.date.localeCompare(a.date)).slice(0, 3),
+    [student.contacts]
+  );
   const firstName = student.name.split(" ")[0];
 
   const gap = ORDER.map((k) => ({ k, need: per[k].target - per[k].n }))
@@ -151,7 +161,9 @@ export function DashboardTab({
           />
         </div>
         <div className="topbar-id">
-          <span className="topbar-avatar" aria-hidden="true">{student.name.charAt(0)}</span>
+          <span className="topbar-avatar" aria-hidden="true">
+            {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : student.name.charAt(0)}
+          </span>
           <span className="topbar-name">{firstName}</span>
         </div>
       </div>
@@ -178,7 +190,7 @@ export function DashboardTab({
           </p>
         </div>
         <div className="greet-ring">
-          <RingAvatar score={score} initial={student.name.charAt(0)} />
+          <RingAvatar score={score} initial={student.name.charAt(0)} avatarUrl={student.avatarUrl} />
           <span className={"pill " + b.cls} style={{ marginTop: 12 }}>
             <span className="dot" style={{ background: bandColor(b.key) }} />
             {b.label}
@@ -257,6 +269,29 @@ export function DashboardTab({
                 <input type="checkbox" checked={t.done} onChange={() => toggleTodo(t.id)} aria-label={`Mark "${t.text}" ${t.done ? "not done" : "done"}`} />
                 <span className={"todo-text" + (t.done ? " done" : "")}>{t.text}</span>
                 <button className="del" onClick={() => delTodo(t.id)} aria-label={`Remove ${t.text}`}>Remove</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Connections get their own quiet spot rather than crowding the growth timeline */}
+      <section className="sec" aria-labelledby="conn-h">
+        <div className="sec-head">
+          <h2 id="conn-h">Recent connections</h2>
+          <button className="linkbtn" onClick={() => onNavigate("profile")}>See all in Profile →</button>
+        </div>
+        {recentContacts.length === 0 ? (
+          <div className="empty">No connections logged yet.</div>
+        ) : (
+          <ul className="entries">
+            {recentContacts.map((c) => (
+              <li key={c.id}>
+                <span className="tag contact">{RELATIONSHIP_LABEL[c.relationship]}</span>
+                <span className="entry-main">
+                  <span className="t">{c.name}</span>
+                  {c.note && <span className="m">{c.note}</span>}
+                </span>
               </li>
             ))}
           </ul>

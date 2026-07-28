@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { Student } from "../lib/types";
-import { CATS, ORDER, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, lastActivityFor, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
+import { CATS, ORDER, RELATIONSHIP_LABEL, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, lastActivityFor, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
 import { setFlag } from "../lib/storage";
 import { Dial, CatBars, StageBar } from "../components/Readiness";
 import { Timeline } from "../components/Timeline";
@@ -56,7 +56,7 @@ export function StaffView({
   const rows = useMemo(() => {
     const withScore = students.map((s) => ({
       ...s,
-      ...scoreFor(s.skills, s.entries, s.grad),
+      ...scoreFor(s.skills, s.entries, s.contacts, s.grad),
       activity: lastActivityFor(s.skills, s.entries),
     }));
     const cmp: Record<SortKey, (a: (typeof withScore)[0], b: (typeof withScore)[0]) => number> = {
@@ -254,8 +254,8 @@ function StaffDrill({
   onBack: () => void;
   onFlag: (ev: React.MouseEvent) => void;
 }) {
-  const { score, per, stage } = scoreFor(student.skills, student.entries, student.grad);
-  const dom = dominantPath(student.skills, student.entries);
+  const { score, per, stage } = scoreFor(student.skills, student.entries, student.contacts, student.grad);
+  const dom = dominantPath(student.skills, student.entries, student.contacts);
   const b = band(score);
   const gaps = ORDER.map((k) => ({ k, need: per[k].target - per[k].n })).filter((g) => g.need > 0);
   const timelineItems = toTimelineItems(student.skills, student.entries);
@@ -306,7 +306,7 @@ function StaffDrill({
 
       <div className="drill-grid">
         {ORDER.map((k) => {
-          const count = k === "skill" ? student.skills.length : student.entries.filter((e) => e.type === k).length;
+          const count = k === "skill" ? student.skills.length : k === "experience" ? student.entries.length : student.contacts.length;
           return (
             <section key={k} aria-labelledby={"d-" + k}>
               <div className="sec-head">
@@ -331,14 +331,26 @@ function StaffDrill({
                     </li>
                   ))}
                 </ul>
-              ) : (
+              ) : k === "experience" ? (
                 <ul className="entries">
-                  {student.entries.filter((e) => e.type === k).map((e) => (
+                  {student.entries.map((e) => (
                     <li key={e.id}>
-                      <span className={"tag " + e.type}>{CATS[e.type].label}</span>
+                      <span className="tag experience">{CATS.experience.label}</span>
                       <span className="entry-main">
                         <span className="t">{e.title}</span>
                         {e.meta && <span className="m">{e.meta}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="entries">
+                  {student.contacts.map((c) => (
+                    <li key={c.id}>
+                      <span className="tag contact">{RELATIONSHIP_LABEL[c.relationship]}</span>
+                      <span className="entry-main">
+                        <span className="t">{c.name}</span>
+                        {c.note && <span className="m">{c.note}</span>}
                       </span>
                     </li>
                   ))}

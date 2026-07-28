@@ -17,9 +17,11 @@ create table if not exists public.students (
   headline               text not null default '',
   resume_url             text not null default '',
   linkedin               text not null default '',
+  avatar_url             text not null default '',
   flagged                boolean not null default false,
   skills                 jsonb not null default '[]',
   entries                jsonb not null default '[]',
+  contacts               jsonb not null default '[]',
   applications           jsonb not null default '[]',
   events_attended        jsonb not null default '[]',
   advising_notes         jsonb not null default '[]',
@@ -27,6 +29,12 @@ create table if not exists public.students (
   dismissed_suggestions  jsonb not null default '[]',
   created_at             timestamptz not null default now()
 );
+
+-- The create table above is skipped by "if not exists" on a database that
+-- already has this table — these alters are what actually apply new columns
+-- to an existing, already-deployed students table. Safe to re-run.
+alter table public.students add column if not exists avatar_url text not null default '';
+alter table public.students add column if not exists contacts jsonb not null default '[]';
 
 alter table public.students enable row level security;
 
@@ -104,3 +112,27 @@ begin
   update public.students set flagged = is_flagged where id = target_id;
 end;
 $$;
+
+-- --- Profile pictures --------------------------------------------------------
+-- One public bucket; a student may only write to the folder named after their
+-- own auth uid, enforced by storage.foldername() reading the object path's
+-- first segment (the app always uploads to "{user id}/avatar.<ext>").
+
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+drop policy if exists "avatar public read" on storage.objects;
+create policy "avatar public read" on storage.objects
+  for select
+  using (bucket_id = 'avatars');
+
+drop policy if exists "avatar own write" on storage.objects;
+create policy "avatar own write" on storage.objects
+  for insert
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "avatar own update" on storage.objects;
+create policy "avatar own update" on storage.objects
+  for update
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);

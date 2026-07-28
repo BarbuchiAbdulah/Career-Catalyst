@@ -28,26 +28,44 @@ never shows the student tabs. See `App.tsx`: `role`/`studentPage`/`showSettings`
 
 ## Architecture decisions (do not undo without reason)
 
-- **Vite + React + TypeScript, fully static.** No backend. No server. Deploys as static files.
-- **Two data shapes, not one, and that's deliberate.** Experience and contacts are still a
-  unified `Entry` with `type: "experience" | "contact"`. Skills are their own `Skill` entity
-  (`title` + a growing `evidence[]` list) because they behave differently — a skill is logged
-  once and built up over time, not a one-off event. `ScoreCategory` (`skill | experience |
-  contact`) is the 3-way readiness split; don't confuse it with `EntryType` (2-way). See
-  `types.ts`.
-- **The readiness score is DERIVED, never stored.** `scoreFor(skills, entries, grad)` in
-  `src/lib/scoring.ts` is the single source of truth — the `skill` category counts
-  `skills.length`, not entries. Student dashboard, profile, and staff roster all call it, so
-  they can never disagree. If you change scoring, change it in that one function.
+- **Vite + React + TypeScript, with a real Supabase backend.** Auth (`@lclark.edu`-only signup,
+  enforced server-side by a trigger — see `supabase/schema.sql`) + Postgres, one row per student
+  in `public.students`, RLS-gated. `src/lib/storage.ts` reads/writes it; there is no localStorage
+  and no shared seed data anymore — every account's data is its own. `role` (`student`/`staff`)
+  comes from the DB, not a UI toggle — a student account can never see the staff roster client-side
+  *or* server-side (RLS enforces it too).
+- **Three data shapes, not one, and that's deliberate.** `Entry` (experience only), `Skill`
+  (`title` + a growing `evidence[]`), and `Contact` (`name` + relationship + email/phone/LinkedIn
+  + note) are each their own entity because they behave differently: an experience is a one-off
+  event with a date range; a skill accumulates evidence over time; a contact needs fields an
+  experience doesn't and should be editable after the fact. `ScoreCategory` (`skill | experience |
+  contact`) is the 3-way readiness split — it's not the same set as any one entity's own fields.
+  See `types.ts`.
+- **The readiness score is DERIVED, never stored.** `scoreFor(skills, entries, contacts, grad)`
+  in `src/lib/scoring.ts` is the single source of truth — each category counts its own array's
+  length. Student dashboard, profile, and staff roster all call it, so they can never disagree.
+  If you change scoring, change it in that one function.
 - **Skill proficiency is DERIVED too.** `levelFor(evidenceCount)` in `scoring.ts` — never store
   a level directly, or it can drift out of sync with the evidence list.
-- **Timeline needs both shapes flattened.** `toTimelineItems(skills, entries)` in `scoring.ts`
-  turns skill evidence + entries into the common `TimelineItem` shape `<Timeline>` renders. If
-  you add a new loggable thing, flatten it here too or it silently vanishes from the timeline.
-- **Persistence is localStorage** (`src/lib/storage.ts`), falling back to seed data. No auth,
-  no accounts. Role is a UI toggle, not a login. This is intentional for the deadline. The
-  storage KEY is versioned (`...:v5`) — bump it whenever the Student/Entry/Skill shape changes
-  so stale payloads don't crash the new model.
+- **An experience has `startDate`/`endDate?`/`ongoing`**, not a single `date` — an ongoing role
+  displays "Present" and anchors to its start term on the timeline rather than being duplicated
+  across every term it spans.
+- **Contacts are deliberately NOT on the four-year timeline.** A connection isn't a "growth
+  moment" the way a skill or experience is; Dashboard shows a separate small "Recent connections"
+  card instead (see `DashboardTab.tsx`), and Profile has the full filterable Connections list.
+- **Timeline only needs skills + entries flattened.** `toTimelineItems(skills, entries)` in
+  `scoring.ts` turns skill evidence + entries into the common `TimelineItem` shape `<Timeline>`
+  renders. If you add a new loggable thing, decide deliberately whether it belongs on the
+  timeline (flatten it here) — contacts don't, on purpose (see above).
+- **Profile pictures use Supabase Storage**, not a database column holding binary data — one
+  public `avatars` bucket, RLS-gated so a student can only write to the folder named after their
+  own auth uid (`{user id}/avatar.<ext>`, `upsert: true` so re-uploading just replaces it).
+  `Student.avatarUrl` is just the resulting public URL, empty string until they upload one.
+- **Whenever `Student`'s shape changes, update `supabase/schema.sql` too** — new columns need an
+  `alter table ... add column if not exists` (the file's `create table if not exists` only runs
+  on a database that doesn't have the table yet, so it silently no-ops on every already-deployed
+  project otherwise). The file is meant to be safe to re-run in the Supabase SQL Editor after
+  every such change.
 
 ## The four-year journey (the product's core idea)
 

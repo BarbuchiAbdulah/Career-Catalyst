@@ -1,9 +1,7 @@
-// Experience and contacts share the unified Entry model. Skills are their own
-// entity (see Skill below) — they grow over time via evidence, so a flat
-// title/date/meta row doesn't fit them the way it fits a one-off experience
-// or contact. ScoreCategory is the 3-way readiness split; EntryType is the
-// 2-way Entry split. They overlap but are not the same set.
-export type EntryType = "experience" | "contact";
+// Entry is experience-only now — Skills and Contacts each grew into their own
+// entity (see below) because they need fields/behavior a flat title/date row
+// doesn't fit: skills accumulate evidence, contacts need email/phone/LinkedIn
+// and are edited after the fact. ScoreCategory is the 3-way readiness split.
 export type ScoreCategory = "skill" | "experience" | "contact";
 
 // Lewis & Clark's real career-path taxonomy (from careercenter.lclark.edu).
@@ -21,19 +19,35 @@ export type CareerPath =
   | "public-service-law-policy"
   | "social-services-nonprofit-education";
 
-// Relationship a contact entry represents — lets the Profile connections list be
+// Relationship a contact represents — lets the Profile connections list be
 // filtered the way a real network is: not everyone is the same kind of contact.
 export type ContactRelationship = "friend" | "mentor" | "recruiter" | "alumni" | "faculty" | "other";
 
 export interface Entry {
   id: string;
-  type: EntryType;
-  title: string; // "what" for experience, "who" for contact
+  title: string; // what you did
   meta: string; // optional context: where, when, detail
-  date: string; // ISO date "YYYY-MM-DD" — when it happened; drives the timeline
-  path: CareerPath; // optional L&C career-path tag; contacts can carry one too (their industry)
-  relationship?: ContactRelationship; // only meaningful when type === "contact"
-  tools?: string[]; // only meaningful when type === "experience" — tech/tools/software used
+  startDate: string; // ISO date "YYYY-MM-DD" — drives the timeline (anchored to start term)
+  endDate?: string; // ISO date; absent + ongoing=true reads as "Present"
+  ongoing: boolean;
+  path: CareerPath; // optional L&C career-path tag
+  tools?: string[]; // tech/tools/software used
+}
+
+// --- Contacts: their own entity, not a repurposed Entry ----------------------
+// A contact needs fields an experience doesn't (email/phone/LinkedIn) and,
+// like skills, should be editable after the fact rather than log-only.
+
+export interface Contact {
+  id: string;
+  name: string;
+  relationship: ContactRelationship;
+  path: CareerPath; // industry
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  note: string;
+  date: string; // ISO date — when added
 }
 
 // --- Skills: a growing entity, not a one-off log row --------------------------
@@ -69,6 +83,7 @@ export interface Application {
   id: string;
   company: string;
   role: string;
+  domain?: string; // real employer domain, for a logo lookup — set only when saved from a curated Job
   link: string; // optional URL
   source: AppSource;
   deadline: string; // ISO date, optional ("" if none)
@@ -108,9 +123,11 @@ export interface Student {
   headline: string; // the student's own goal/aspiration — makes the space theirs
   resumeUrl: string; // link, not a file — there's no backend to host a binary
   linkedin: string;
+  avatarUrl: string; // Supabase Storage public URL; "" falls back to initials
   flagged: boolean; // staff outreach flag
   skills: Skill[];
-  entries: Entry[]; // experience + contact only — see Skill above
+  entries: Entry[]; // experience only — see Skill/Contact above
+  contacts: Contact[];
   applications: Application[];
   eventsAttended: string[]; // ids into content.ts EVENTS
   advisingNotes: AdvisingNote[];

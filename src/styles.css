@@ -66,13 +66,14 @@ h1.page{font-family:var(--font-site);font-weight:600;font-size:clamp(28px,4vw,40
 .sec-head h2{font-family:var(--font-site);font-weight:600;font-size:20px;margin:0}
 .sec-head .count{font-family:var(--font-site);font-size:12px;color:var(--ink-soft)}
 
-.logbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.logbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px 14px;align-items:end;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.logbar .field.grow{grid-column:span 2}
 .field{display:flex;flex-direction:column;gap:5px}
 .field label{font-size:12px;font-weight:600;color:var(--ink-soft)}
 .field input,.field select{font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);min-width:150px}
 .field.grow{flex:1;min-width:200px}
 .field.grow input{width:100%}
-.btn{border:0;background:var(--orange);color:#fff;font-weight:600;font-size:14px;padding:11px 20px;border-radius:10px;box-shadow:var(--shadow)}
+.btn{border:0;background:var(--orange);color:#fff;font-weight:600;font-size:14px;padding:11px 20px;border-radius:10px;box-shadow:var(--shadow);text-decoration:none;display:inline-block}
 .btn:hover{background:var(--orange-deep)}
 
 ul.entries{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -83,8 +84,10 @@ ul.entries li{display:flex;align-items:center;gap:14px;background:var(--card);bo
 .tag.contact{background:#FBEAD9;color:#B0561E}
 .entry-main{flex:1;min-width:0}
 .entry-main .t{font-weight:600;font-size:15px}
-.entry-main .m{font-size:13px;color:var(--ink-soft);margin-left:8px}
-.del{border:0;background:transparent;color:var(--ink-soft);font-size:13px;font-weight:600;padding:6px 8px;border-radius:8px}
+.entry-main .m{font-size:13px;color:var(--ink-soft);margin-left:10px}
+.entry-main .pathchip{margin-left:10px}
+h3 .pathchip{margin-left:10px}
+.del{border:0;background:transparent;color:var(--ink-soft);font-size:13px;font-weight:600;padding:7px 12px;border-radius:8px}
 .del:hover{color:var(--warn);background:#F7E4DC}
 .empty{border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--ink-soft);background:transparent}
 
@@ -141,7 +144,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-betw
 /* ---- Timeline ---- */
 ol.timeline{list-style:none;margin:0;padding:0}
 .tl-term{position:relative;padding-left:26px;margin-bottom:8px}
-.tl-term::before{content:"";position:absolute;left:5px;top:16px;bottom:-8px;width:2px;background:var(--paper-2)}
+.tl-term::before{content:"";position:absolute;left:5px;top:16px;bottom:-8px;width:2px;background:var(--line)}
 .tl-term:last-child::before{display:none}
 .tl-termhead{display:flex;align-items:center;gap:10px;margin:0 0 10px}
 .tl-dot{position:absolute;left:0;width:12px;height:12px;border-radius:50%;background:var(--orange);border:2px solid var(--paper)}
@@ -178,20 +181,21 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .navitem.active svg{color:var(--orange)}
 .navitem.danger{color:var(--warn)}
 .side-me{display:flex;align-items:center;gap:11px;padding:8px 8px 4px}
-.side-me-avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-weight:700;font-family:var(--font-site);flex:none}
+.side-me-avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-weight:700;font-family:var(--font-site);flex:none;overflow:hidden}
+.side-me-avatar img,.topbar-avatar img,.ringavatar-face img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .side-me-text{display:flex;flex-direction:column;min-width:0}
 .side-me-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .side-me-sub{font-family:var(--font-site);font-size:11px}
 .side-foot{border-top:1px solid var(--paper-2);padding-top:12px;margin-top:12px}
 
-.content{padding:26px 34px 80px;max-width:1160px;margin:0 auto;width:100%}
+.content{padding:26px 34px 80px;max-width:1160px;margin:0 auto;width:100%;min-width:0}
 
 /* ---- Top bar ---- */
 .topbar{display:flex;align-items:center;gap:18px;margin-bottom:22px}
 .searchbox{flex:1;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--paper-2);border-radius:14px;padding:12px 18px;color:var(--line)}
 .searchbox input{border:0;background:transparent;font:inherit;font-size:14.5px;color:var(--ink);width:100%;outline:none}
 .topbar-id{display:flex;align-items:center;gap:10px}
-.topbar-avatar{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-weight:700;font-family:var(--font-site)}
+.topbar-avatar{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-weight:700;font-family:var(--font-site);overflow:hidden}
 .topbar-name{font-weight:600;font-size:14.5px}
 
 /* ---- Greeting banner (hero) ---- */
@@ -206,7 +210,7 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 
 /* Signature ring avatar */
 .ringavatar{position:relative}
-.ringavatar-face{position:absolute;inset:12px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:38px}
+.ringavatar-face{position:absolute;inset:12px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:38px;overflow:hidden}
 .ringavatar-badge{position:absolute;top:2px;right:2px;color:#fff;font-family:var(--font-site);font-weight:700;font-size:12px;padding:3px 8px;border-radius:999px;border:2px solid #fff}
 .greet .pill{background:rgba(255,255,255,.9)}
 
@@ -235,10 +239,40 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
   .greet{grid-template-columns:1fr;text-align:center;justify-items:center}
 }
 
+/* ---- Bottom tab bar (phones) ---- */
+.bottomnav{display:none}
+@media(max-width:640px){
+  .sidebar{display:none}
+  .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--paper-2);box-shadow:0 -2px 12px rgba(35,31,32,.08);z-index:50;padding:6px 2px calc(6px + env(safe-area-inset-bottom))}
+  .bottomnav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:transparent;color:var(--ink-soft);font-size:10.5px;font-weight:600;padding:6px 2px;min-height:44px}
+  .bottomnav-tab svg{width:20px;height:20px}
+  .bottomnav-tab.active{color:var(--orange-deep)}
+  .content{padding-bottom:88px}
+}
+
 /* ============ Profile tab ============ */
 .profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
 .chiprow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .chip{background:var(--paper-2);color:var(--ink-soft);font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:999px}
+.profileavatar{width:64px;height:64px;border-radius:50%;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-weight:700;font-family:var(--font-site);font-size:24px;flex:none;overflow:hidden}
+.profileavatar img{width:100%;height:100%;object-fit:cover}
+.contactinfo{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--ink-soft);width:100%;margin-top:4px}
+
+/* ============ Profile header (avatar + name) ============ */
+.profile-header{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px;flex-wrap:wrap}
+.profile-header .profileavatar{width:72px;height:72px;font-size:27px}
+.profile-header-name{font-family:var(--font-site);font-weight:700;font-size:19px}
+.profile-header-sub{font-size:13px;color:var(--ink-soft)}
+.profile-header-hint{margin:0 0 0 auto;font-size:12.5px;color:var(--ink-soft)}
+
+/* ============ Majors/minors: their own visible card ============ */
+.majorscard{background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
+
+/* ============ Inline checkbox next to a field label ============ */
+.inline-check{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-soft);flex:none;white-space:nowrap}
+.field label.row-between{display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%}
+.daterange-row{display:flex;align-items:center;gap:8px}
+.daterange-row input{flex:1;min-width:0}
 
 /* ============ Filter chips (Profile/Applications) ============ */
 .filterrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
@@ -264,9 +298,10 @@ details.resourcecard summary h3,details.resourcecard summary p{display:inline-bl
 .btn:disabled,.btn:disabled:hover{opacity:.6;cursor:default;background:var(--line);color:#fff}
 
 /* ============ Applications list ============ */
-ul.entries.applist li.approw{gap:14px;flex-wrap:wrap}
+ul.entries.applist li.approw{gap:20px;flex-wrap:wrap;padding:14px 18px}
 .approw-deadline{font-size:13px;color:var(--ink-soft);white-space:nowrap}
 .approw select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+.approw-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
 
 /* ============ Dashboard: clickable tally tiles ============ */
 .statcards.tally{grid-template-columns:repeat(2,1fr);max-width:520px}
@@ -279,8 +314,8 @@ ul.entries.applist li.approw{gap:14px;flex-wrap:wrap}
 .tile-arrow{color:var(--line);font-size:18px;flex:none}
 
 /* ============ Accent chip (ink+orange) — reused for interests, multi-select ============ */
-.pill.chip-accent{background:var(--ink);color:var(--orange);font-weight:700;border:0;cursor:pointer}
-.pill.chip-accent:hover{background:#3a3436}
+.pill.chip-accent{background:#FBEEE4;color:var(--orange-deep);font-weight:700;border:0;cursor:pointer}
+.pill.chip-accent:hover{background:#F3D9C6}
 
 /* ============ To-do (Dashboard) ============ */
 .todolist{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -301,13 +336,14 @@ ul.entries.applist li.approw{gap:14px;flex-wrap:wrap}
 .skillcards{display:flex;flex-direction:column;gap:12px}
 .skillcard{background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
 .row-between{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.row{display:flex;align-items:center;flex-wrap:wrap}
 .skillcard h3{margin:0;font-size:15.5px;font-weight:600}
 .proflevel{font-family:var(--font-site);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--orange-deep);background:#FBEEE4;padding:3px 9px;border-radius:6px;flex:none}
 .evidencelist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
 .evidencelist li{display:flex;align-items:baseline;gap:10px;padding:4px 0;font-size:13px}
 .ev-date{font-family:var(--font-site);font-size:11.5px;color:var(--line);min-width:78px;flex:none}
 .ev-desc{flex:1;color:var(--ink-soft)}
-.badge-sm-btn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:600;font-size:12.5px;padding:6px 11px;border-radius:8px}
+.badge-sm-btn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:8px}
 .badge-sm-btn:hover{border-color:var(--orange);color:var(--orange-deep)}
 
 /* ============ Profile: experience tools chips ============ */
@@ -317,12 +353,18 @@ ul.entries.applist li.approw{gap:14px;flex-wrap:wrap}
 /* ============ Inline edit rows (Experience / Applications) ============ */
 li.editrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 li.editrow input{font-family:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);flex:1;min-width:120px}
+li.editrow select,.editrow-select{font-family:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);flex:1;min-width:120px}
 
 /* ============ Applications: sub-tabs, monogram, status dot ============ */
 .subtabs{display:flex;gap:20px;border-bottom:1px solid var(--paper-2);margin:20px 0 0}
 .subtab{border:0;background:transparent;font-weight:600;font-size:14px;color:var(--ink-soft);padding:10px 2px;border-bottom:2px solid transparent}
 .subtab.active{color:var(--orange-deep);border-color:var(--orange)}
 .monogram{width:36px;height:36px;border-radius:10px;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:13px;flex:none}
+.monogram-img{background:#fff;border:1px solid var(--paper-2);padding:5px}
+.monogram-img img{width:100%;height:100%;object-fit:contain}
+.boardrow{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0 0 16px}
+.boardlink{font-size:12.5px;font-weight:600;color:var(--orange-deep);text-decoration:none;background:#FBEEE4;padding:5px 11px;border-radius:999px}
+.boardlink:hover{background:#F3D9C6}
 .statusdot{width:9px;height:9px;border-radius:50%;flex:none}
 .statusdot.ok{background:var(--good)}
 .statusdot.mid{background:var(--orange-deep)}
@@ -336,6 +378,13 @@ li.editrow input{font-family:inherit;font-size:13.5px;padding:8px 10px;border:1p
 .eventbody{padding:14px 16px}
 .eventbody h3{margin:2px 0 4px;font-size:15.5px;font-weight:600}
 .avatarring{width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:14px}
+
+/* ============ Carousel (Events/Alumni) ============ */
+.carousel-wrap{display:flex;align-items:stretch;gap:6px;min-width:0}
+.carousel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;flex:1;min-width:0}
+.carousel>*{scroll-snap-align:start;flex:0 0 240px}
+.carousel-nav{flex:none;width:32px;border:1px solid var(--paper-2);background:var(--card);border-radius:10px;font-size:18px;color:var(--ink-soft);box-shadow:var(--shadow)}
+.carousel-nav:hover{color:var(--orange-deep);border-color:var(--orange)}
 
 @media(max-width:720px){
   .cardgrid{grid-template-columns:1fr}
