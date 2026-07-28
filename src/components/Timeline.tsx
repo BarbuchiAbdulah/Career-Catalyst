@@ -1,8 +1,11 @@
-import type { Entry } from "../lib/types";
+import type { TimelineItem } from "../lib/types";
 import { CATS, pathLabel } from "../lib/scoring";
 
 // Groups entries by academic term and renders them as a vertical timeline —
 // the visible "here's everything you've built" spine of the four-year journey.
+// Skill evidence rows and Entry rows are different shapes; callers flatten both
+// into this common shape (see toTimelineItems in scoring.ts) so the timeline
+// can show all of it together.
 
 function termOf(iso: string): { key: string; label: string; sort: number } {
   const d = new Date(iso + "T00:00:00");
@@ -20,13 +23,13 @@ function fmt(iso: string): string {
   });
 }
 
-export function Timeline({ entries }: { entries: Entry[] }) {
+export function Timeline({ entries }: { entries: TimelineItem[] }) {
   if (entries.length === 0) {
     return <div className="empty">Your timeline fills in as you log entries.</div>;
   }
 
   // newest term first
-  const terms = new Map<string, { label: string; sort: number; items: Entry[] }>();
+  const terms = new Map<string, { label: string; sort: number; items: TimelineItem[] }>();
   for (const e of entries) {
     const t = termOf(e.date);
     if (!terms.has(t.key)) terms.set(t.key, { label: t.label, sort: t.sort, items: [] });

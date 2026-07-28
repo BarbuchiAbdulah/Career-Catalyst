@@ -234,3 +234,112 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
   .statcards{grid-template-columns:1fr}
   .greet{grid-template-columns:1fr;text-align:center;justify-items:center}
 }
+
+/* ============ Profile tab ============ */
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{background:var(--paper-2);color:var(--ink-soft);font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:999px}
+
+/* ============ Filter chips (Profile/Applications) ============ */
+.filterrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.filterchip{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:600;font-size:13px;padding:7px 13px;border-radius:999px}
+.filterchip:hover{background:var(--paper)}
+.filterchip[aria-pressed="true"]{background:var(--ink);color:var(--orange);border-color:var(--ink)}
+
+/* ============ Card grid (Applications/Resources) ============ */
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:4px}
+.jobcard,.resourcecard{display:flex;flex-direction:column;gap:8px;align-items:flex-start;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.jobcard h3,.resourcecard h3{font-family:var(--font-site);font-weight:600;font-size:16px;margin:0}
+.jobcard-org{font-size:13px;color:var(--ink-soft);margin:0}
+.jobcard-blurb{font-size:13.5px;color:var(--ink-soft);margin:0}
+details.resourcecard{cursor:pointer}
+details.resourcecard summary{cursor:pointer;list-style:revert}
+details.resourcecard summary h3,details.resourcecard summary p{display:inline-block}
+.tmpl-bullets{margin:10px 0 0;padding-left:18px;font-size:13.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:6px}
+
+/* ============ Buttons: small/outline/disabled variants ============ */
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:9px}
+.btn-outline{background:transparent;color:var(--orange-deep);border:1.5px solid var(--orange);box-shadow:none}
+.btn-outline:hover{background:#FBEEE4}
+.btn:disabled,.btn:disabled:hover{opacity:.6;cursor:default;background:var(--line);color:#fff}
+
+/* ============ Applications list ============ */
+ul.entries.applist li.approw{gap:14px;flex-wrap:wrap}
+.approw-deadline{font-size:13px;color:var(--ink-soft);white-space:nowrap}
+.approw select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+
+/* ============ Dashboard: clickable tally tiles ============ */
+.statcards.tally{grid-template-columns:repeat(2,1fr);max-width:520px}
+.tile{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow);text-align:left;width:100%}
+.tile:hover{border-color:var(--orange)}
+.tile-ic{width:44px;height:44px;border-radius:12px;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:19px;flex:none}
+.tile-body{flex:1;min-width:0;display:flex;flex-direction:column}
+.tile-count{font-family:var(--font-site);font-weight:700;font-size:20px;line-height:1.2}
+.tile-label{font-size:13px;color:var(--ink-soft)}
+.tile-arrow{color:var(--line);font-size:18px;flex:none}
+
+/* ============ Accent chip (ink+orange) — reused for interests, multi-select ============ */
+.pill.chip-accent{background:var(--ink);color:var(--orange);font-weight:700;border:0;cursor:pointer}
+.pill.chip-accent:hover{background:#3a3436}
+
+/* ============ To-do (Dashboard) ============ */
+.todolist{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.todolist li{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--paper-2);border-radius:12px;padding:11px 16px}
+.todo-suggested{background:#FBEEE4;border-color:#F3D9C6}
+.badge-suggested{font-family:var(--font-site);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--orange-deep);background:#F3D9C6;padding:3px 8px;border-radius:6px;flex:none}
+.todo-text{flex:1;font-size:14.5px}
+.todo-text.done{color:var(--ink-soft);text-decoration:line-through}
+
+/* ============ Profile: majors/minors multi-select ============ */
+.grid2col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.multiselect-list{max-height:180px;overflow-y:auto;border:1px solid var(--paper-2);border-radius:10px;padding:6px}
+.multiselect-opt{display:flex;align-items:center;gap:9px;font-size:13.5px;padding:6px 8px;border-radius:8px;cursor:pointer}
+.multiselect-opt:hover{background:var(--paper)}
+.sortselect{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+
+/* ============ Profile: skill growth cards ============ */
+.skillcards{display:flex;flex-direction:column;gap:12px}
+.skillcard{background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
+.row-between{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.skillcard h3{margin:0;font-size:15.5px;font-weight:600}
+.proflevel{font-family:var(--font-site);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--orange-deep);background:#FBEEE4;padding:3px 9px;border-radius:6px;flex:none}
+.evidencelist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
+.evidencelist li{display:flex;align-items:baseline;gap:10px;padding:4px 0;font-size:13px}
+.ev-date{font-family:var(--font-site);font-size:11.5px;color:var(--line);min-width:78px;flex:none}
+.ev-desc{flex:1;color:var(--ink-soft)}
+.badge-sm-btn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:600;font-size:12.5px;padding:6px 11px;border-radius:8px}
+.badge-sm-btn:hover{border-color:var(--orange);color:var(--orange-deep)}
+
+/* ============ Profile: experience tools chips ============ */
+.pill.chip-tool{background:var(--paper-2);color:var(--ink-soft);font-weight:600;font-size:12px;padding:4px 10px}
+.pill.chip-tool.linked{background:#FBEEE4;color:var(--orange-deep)}
+
+/* ============ Inline edit rows (Experience / Applications) ============ */
+li.editrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+li.editrow input{font-family:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);flex:1;min-width:120px}
+
+/* ============ Applications: sub-tabs, monogram, status dot ============ */
+.subtabs{display:flex;gap:20px;border-bottom:1px solid var(--paper-2);margin:20px 0 0}
+.subtab{border:0;background:transparent;font-weight:600;font-size:14px;color:var(--ink-soft);padding:10px 2px;border-bottom:2px solid transparent}
+.subtab.active{color:var(--orange-deep);border-color:var(--orange)}
+.monogram{width:36px;height:36px;border-radius:10px;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:13px;flex:none}
+.statusdot{width:9px;height:9px;border-radius:50%;flex:none}
+.statusdot.ok{background:var(--good)}
+.statusdot.mid{background:var(--orange-deep)}
+.statusdot.low{background:var(--warn)}
+.linkicon{color:var(--ink-soft);font-size:16px;text-decoration:none;flex:none}
+.linkicon:hover{color:var(--orange-deep)}
+
+/* ============ Resources: event banners, alumni avatar ring ============ */
+.eventcard{border:1px solid var(--paper-2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
+.eventbanner{background:var(--ink);color:var(--orange);font-family:var(--font-site);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px}
+.eventbody{padding:14px 16px}
+.eventbody h3{margin:2px 0 4px;font-size:15.5px;font-weight:600}
+.avatarring{width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:14px}
+
+@media(max-width:720px){
+  .cardgrid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:1fr}
+  .grid2col{grid-template-columns:1fr}
+  .statcards.tally{grid-template-columns:1fr}
+}

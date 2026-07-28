@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { Student } from "../lib/types";
-import { CATS, ORDER, STAGE_LABEL, band, bandColor, dominantPath, pathLabel, scoreFor } from "../lib/scoring";
+import { CATS, ORDER, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
 import { Dial, CatBars, StageBar } from "../components/Readiness";
 import { Timeline } from "../components/Timeline";
 
@@ -34,7 +34,7 @@ export function StaffView({
   const liveRef = useRef<HTMLDivElement>(null);
 
   const rows = useMemo(() => {
-    const withScore = students.map((s) => ({ ...s, ...scoreFor(s.entries, s.grad) }));
+    const withScore = students.map((s) => ({ ...s, ...scoreFor(s.skills, s.entries, s.grad) }));
     const cmp: Record<SortKey, (a: (typeof withScore)[0], b: (typeof withScore)[0]) => number> = {
       score: (a, b) => a.score - b.score,
       name: (a, b) => a.name.localeCompare(b.name),
@@ -146,7 +146,7 @@ export function StaffView({
                   <td>
                     <span className="who">
                       {r.name}
-                      <small>{r.major}</small>
+                      <small>{r.majors.join(", ")}</small>
                     </span>
                   </td>
                   <td>’{r.grad.slice(2)}</td>
@@ -196,10 +196,11 @@ function StaffDrill({
   onBack: () => void;
   onFlag: (ev: React.MouseEvent) => void;
 }) {
-  const { score, per, stage } = scoreFor(student.entries, student.grad);
-  const dom = dominantPath(student.entries);
+  const { score, per, stage } = scoreFor(student.skills, student.entries, student.grad);
+  const dom = dominantPath(student.skills, student.entries);
   const b = band(score);
   const gaps = ORDER.map((k) => ({ k, need: per[k].target - per[k].n })).filter((g) => g.need > 0);
+  const timelineItems = toTimelineItems(student.skills, student.entries);
 
   return (
     <>
@@ -207,7 +208,7 @@ function StaffDrill({
         ← Back to roster
       </button>
       <p className="eyebrow">
-        {student.major} · Class of {student.grad}
+        {student.majors.join(", ")} · Class of {student.grad}
       </p>
       <h1 className="page">{student.name}</h1>
       {student.headline && <p className="lede">{student.headline}</p>}
@@ -247,7 +248,7 @@ function StaffDrill({
 
       <div className="drill-grid">
         {ORDER.map((k) => {
-          const items = student.entries.filter((e) => e.type === k);
+          const count = k === "skill" ? student.skills.length : student.entries.filter((e) => e.type === k).length;
           return (
             <section key={k} aria-labelledby={"d-" + k}>
               <div className="sec-head">
@@ -255,14 +256,26 @@ function StaffDrill({
                   {CATS[k].label}
                 </h2>
                 <span className="count">
-                  {items.length}/{per[k].target}
+                  {count}/{per[k].target}
                 </span>
               </div>
-              {items.length === 0 ? (
+              {count === 0 ? (
                 <div className="empty">Nothing logged — a concrete next step to suggest.</div>
+              ) : k === "skill" ? (
+                <ul className="entries">
+                  {student.skills.map((s) => (
+                    <li key={s.id}>
+                      <span className="tag skill">{SKILL_LEVEL_LABEL[levelFor(s.evidence.length)]}</span>
+                      <span className="entry-main">
+                        <span className="t">{s.title}</span>
+                        <span className="m">{s.evidence.length} {s.evidence.length === 1 ? "entry" : "entries"} logged</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               ) : (
                 <ul className="entries">
-                  {items.map((e) => (
+                  {student.entries.filter((e) => e.type === k).map((e) => (
                     <li key={e.id}>
                       <span className={"tag " + e.type}>{CATS[e.type].label}</span>
                       <span className="entry-main">
@@ -281,9 +294,9 @@ function StaffDrill({
       <section className="sec" aria-labelledby="d-tl">
         <div className="sec-head">
           <h2 id="d-tl">Four-year timeline</h2>
-          <span className="count">{student.entries.length} entries</span>
+          <span className="count">{timelineItems.length} entries</span>
         </div>
-        <Timeline entries={student.entries} />
+        <Timeline entries={timelineItems} />
       </section>
     </>
   );

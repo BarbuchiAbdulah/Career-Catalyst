@@ -24,12 +24,22 @@ you and a timeline that becomes your résumé.
 
 ## Two views
 
-- **Student** — your name and goal, a **four-year stage bar**, a readiness dial, three category
-  bars (Skills / Experience / Network), a "biggest gap" nudge, a **timeline** of everything you've
-  logged grouped by term, and a form to add entries (with a date and an optional L&C career-path tag).
+- **Student** — four tabs:
+  - **Dashboard** — a four-year stage bar, readiness dial, category bars, a "biggest gap" nudge,
+    quick tallies (applications tracked, events attended), and a timeline of everything logged.
+  - **Profile** — editable major/interests/headline/resume link/LinkedIn, the log-entry form for
+    skills and experience, and a Connections list filterable by relationship (mentor/faculty/
+    alumni/recruiter/friend) and industry.
+  - **Applications** — seeded on-campus and external opportunities to explore and save, plus a
+    personal tracker with deadlines and status.
+  - **Resources & Events** — resume templates, Career-Center articles, an explore-by-path view,
+    an events list with mark-attended, an alumni directory to connect with, and advising notes.
 - **Career Center** — a sortable roster with the students who need help on top and a **stage
   column** so a low score is read fairly for a first-year vs. a senior, an outreach flag per
   student, and a per-student drill-in with gaps framed as talking points plus their full timeline.
+
+Role is switched from **Settings**, not a header toggle — the student sidebar never shows the
+Career Center roster, and vice versa.
 
 ## Stage-aware scoring
 

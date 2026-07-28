@@ -1,9 +1,9 @@
-import type { Entry, EntryType, Readiness, Band, BandKey, Stage, CareerPath } from "./types";
+import type { Entry, Skill, ScoreCategory, Readiness, Band, BandKey, Stage, CareerPath, ContactRelationship, SkillLevel, TimelineItem } from "./types";
 
 // Category metadata, grounded in NACE career-readiness areas.
 // `base` is the SENIOR-year target; earlier stages scale down (see STAGE_FACTOR).
 export const CATS: Record<
-  EntryType,
+  ScoreCategory,
   { label: string; help: string; base: number; ex: string }
 > = {
   skill: {
@@ -26,10 +26,10 @@ export const CATS: Record<
   },
 };
 
-export const ORDER: EntryType[] = ["skill", "experience", "contact"];
+export const ORDER: ScoreCategory[] = ["skill", "experience", "contact"];
 
 // Weighted so no single category can carry the whole score. Must sum to 1.
-export const WEIGHT: Record<EntryType, number> = {
+export const WEIGHT: Record<ScoreCategory, number> = {
   skill: 0.34,
   experience: 0.36,
   contact: 0.3,
@@ -51,6 +51,19 @@ export const PATHS: { key: Exclude<CareerPath, "">; label: string }[] = [
 export function pathLabel(key: CareerPath): string {
   return PATHS.find((p) => p.key === key)?.label ?? "";
 }
+
+// Relationship types a contact entry can carry — lets Profile's Connections list be
+// filtered the way a real network actually breaks down.
+export const RELATIONSHIPS: ContactRelationship[] = ["mentor", "faculty", "alumni", "recruiter", "friend", "other"];
+
+export const RELATIONSHIP_LABEL: Record<ContactRelationship, string> = {
+  mentor: "Mentor",
+  faculty: "Faculty",
+  alumni: "Alumni",
+  recruiter: "Recruiter",
+  friend: "Friend",
+  other: "Other",
+};
 
 // --- Stage / four-year arc -------------------------------------------------
 
@@ -83,18 +96,23 @@ export const STAGE_FACTOR: Record<Stage, number> = {
   senior: 1,
 };
 
-export function targetFor(type: EntryType, stage: Stage): number {
-  return Math.max(1, Math.round(CATS[type].base * STAGE_FACTOR[stage]));
+export function targetFor(cat: ScoreCategory, stage: Stage): number {
+  return Math.max(1, Math.round(CATS[cat].base * STAGE_FACTOR[stage]));
 }
 
 // --- Score -----------------------------------------------------------------
 
-export function scoreFor(entries: Entry[], grad: string): Readiness {
+export function scoreFor(skills: Skill[], entries: Entry[], grad: string): Readiness {
   const stage = stageFor(grad);
+  const counts: Record<ScoreCategory, number> = {
+    skill: skills.length,
+    experience: entries.filter((e) => e.type === "experience").length,
+    contact: entries.filter((e) => e.type === "contact").length,
+  };
   let total = 0;
   const per = {} as Readiness["per"];
   for (const k of ORDER) {
-    const n = entries.filter((e) => e.type === k).length;
+    const n = counts[k];
     const target = targetFor(k, stage);
     const frac = Math.min(1, n / target);
     per[k] = { n, target, frac, pct: Math.round(frac * 100) };
@@ -102,6 +120,25 @@ export function scoreFor(entries: Entry[], grad: string): Readiness {
   }
   return { score: Math.round(total * 100), per, stage };
 }
+
+// --- Skill proficiency -------------------------------------------------------
+// Derived purely from how much evidence exists, so it can never drift out of
+// sync with what's actually logged.
+
+export function levelFor(evidenceCount: number): SkillLevel {
+  if (evidenceCount >= 4) return "advanced";
+  if (evidenceCount >= 2) return "intermediate";
+  return "beginner";
+}
+
+export const SKILL_LEVEL_LABEL: Record<SkillLevel, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
+// Evidence count that reaches "advanced" — used to size the progress bar.
+export const ADVANCED_AT = 4;
 
 export function band(score: number): Band {
   if (score >= 70) return { key: "ok", label: "On track", cls: "ok" };
@@ -113,10 +150,24 @@ export function bandColor(k: BandKey): string {
   return k === "ok" ? "var(--good)" : k === "mid" ? "var(--orange)" : "var(--warn)";
 }
 
-// Dominant career path across a student's tagged entries, or null if none.
-// Shows whether their work coheres toward a direction.
-export function dominantPath(entries: Entry[]): { key: CareerPath; n: number } | null {
+// Flattens skills (one row per evidence entry) + entries into the common shape
+// <Timeline> renders, so a skill's whole growth history shows up alongside
+// experience/contacts instead of disappearing now that skills are their own type.
+export function toTimelineItems(skills: Skill[], entries: Entry[]): TimelineItem[] {
+  const fromSkills: TimelineItem[] = skills.flatMap((s) =>
+    s.evidence.map((ev) => ({ id: ev.id, type: "skill" as const, title: s.title, meta: ev.description, date: ev.date, path: s.path }))
+  );
+  const fromEntries: TimelineItem[] = entries.map((e) => ({ id: e.id, type: e.type, title: e.title, meta: e.meta, date: e.date, path: e.path }));
+  return [...fromSkills, ...fromEntries];
+}
+
+// Dominant career path across a student's tagged skills + entries, or null if
+// none. Shows whether their work coheres toward a direction.
+export function dominantPath(skills: Skill[], entries: Entry[]): { key: CareerPath; n: number } | null {
   const counts = new Map<CareerPath, number>();
+  for (const s of skills) {
+    if (s.path) counts.set(s.path, (counts.get(s.path) ?? 0) + 1);
+  }
   for (const e of entries) {
     if (e.path) counts.set(e.path, (counts.get(e.path) ?? 0) + 1);
   }

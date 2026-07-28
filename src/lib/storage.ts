@@ -1,7 +1,7 @@
 import type { Student } from "./types";
 import { SEED_STUDENTS } from "./seed";
 
-const KEY = "career-catalyst:students:v3";
+const KEY = "career-catalyst:students:v5";
 
 // Load students from localStorage, falling back to seed data on first run
 // or if the stored payload is missing/corrupt.
