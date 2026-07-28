@@ -38,8 +38,8 @@ you and a timeline that becomes your résumé.
   column** so a low score is read fairly for a first-year vs. a senior, an outreach flag per
   student, and a per-student drill-in with gaps framed as talking points plus their full timeline.
 
-Role is switched from **Settings**, not a header toggle — the student sidebar never shows the
-Career Center roster, and vice versa.
+Role comes from the signed-in account (`students.role` in the database), not a UI toggle — a
+student can never click into the Career Center roster, and vice versa.
 
 ## Stage-aware scoring
 
@@ -53,29 +53,41 @@ Skills and experiences can be tagged with one of Lewis & Clark's real nine caree
 Science/Tech/CS, Environment & Natural Sciences, Public Service/Law/Policy, and so on). The app
 surfaces a student's dominant path, showing whether their work is cohering toward a direction.
 
-Switch between them with the toggle in the header. (In a real deployment this would be a login;
-for the demo it's a toggle so judges can see both sides.)
+## Accounts & data
+
+Sign-in is real: email/password via Supabase Auth, gated to `@lclark.edu` addresses (checked
+client-side for UX and enforced again server-side, so it can't be bypassed). Each account gets
+one row in a `students` table behind Postgres row-level security — a student can only read/write
+their own row; staff can read the whole roster but only flag students for outreach, not edit
+their data. See [`supabase/schema.sql`](./supabase/schema.sql) for the full schema and policies.
+The readiness score itself is never stored — it's always derived from a student's skills/entries
+via a single `scoreFor()` function, so the student and staff views can never disagree.
 
 ## Tech
 
-Vite + React + TypeScript, fully static — no backend. Data persists in `localStorage` and falls
-back to seed data. The readiness score is always derived from entries via a single
-`scoreFor()` function, so the student and staff views can never disagree.
+Vite + React + TypeScript on the frontend, Supabase (Postgres + Auth) as the backend. Fully
+static build — no server to run yourself; Supabase is the only external dependency.
 
 ## Run it
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # production build to dist/
+cp .env.example .env.local   # fill in your Supabase project URL + anon key
+npm run dev                  # http://localhost:5173
+npm run build                # production build to dist/
 ```
+
+You'll also need a Supabase project with [`supabase/schema.sql`](./supabase/schema.sql) run once
+in the SQL Editor (Project → SQL Editor → New query → paste → Run) before sign-up will work.
 
 ## Deploy
 
-It's a static build. Either:
+The frontend is a static build; Supabase is hosted separately.
 
-- **Vercel** — import the repo; it auto-detects Vite. Zero config.
-- **GitHub Pages** — run `npm run build` and serve the `dist/` folder.
+- **Vercel** — import the repo; it auto-detects Vite. Add `VITE_SUPABASE_URL` and
+  `VITE_SUPABASE_ANON_KEY` as environment variables in the project settings.
+- **GitHub Pages** — run `npm run build`, serve the `dist/` folder, and set the same two
+  `VITE_*` env vars at build time.
 
 ## Accessibility
 
