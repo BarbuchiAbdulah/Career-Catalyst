@@ -3,6 +3,7 @@ import type { AdvisingNote, Student } from "../lib/types";
 import {
   ALUMNI_DIRECTORY,
   ARTICLES,
+  CAREER_CENTER,
   CAREER_SERVICES,
   EVENTS,
   PATH_INFO,
@@ -95,6 +96,13 @@ export function ResourcesTab({
             </div>
           ))}
         </div>
+        <p className="jobcard-blurb" style={{ marginTop: 12 }}>
+          {CAREER_CENTER.location} · {CAREER_CENTER.hours} · {CAREER_CENTER.phone} ·{" "}
+          <a href={`mailto:${CAREER_CENTER.email}`}>{CAREER_CENTER.email}</a> ·{" "}
+          <a href={CAREER_CENTER.siteUrl} target="_blank" rel="noreferrer" className="linkbtn">
+            careercenter.lclark.edu →
+          </a>
+        </p>
       </section>
 
       {/* Resume templates */}
@@ -138,6 +146,15 @@ export function ResourcesTab({
               <h3>{p.label}</h3>
               <p className="jobcard-blurb">{PATH_INFO[p.key].blurb}</p>
               <p className="jobcard-blurb" style={{ fontStyle: "italic" }}>{PATH_INFO[p.key].insight}</p>
+              <a
+                href={PATH_INFO[p.key].learnMoreUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="linkbtn"
+                style={{ display: "inline-block", marginTop: 8 }}
+              >
+                Learn more at the Career Center →
+              </a>
             </div>
           ))}
         </div>

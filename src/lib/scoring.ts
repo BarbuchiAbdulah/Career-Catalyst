@@ -40,7 +40,7 @@ export const PATHS: { key: Exclude<CareerPath, "">; label: string }[] = [
   { key: "comm-marketing-pr", label: "Communication, Marketing & PR" },
   { key: "arts-design-media", label: "Creative Arts, Design & Media" },
   { key: "data-tech-cs", label: "Data Science, Tech & Computer Science" },
-  { key: "econ-leadership-innovation", label: "Economics, Leadership & Innovation" },
+  { key: "econ-leadership-innovation", label: "Economics, Organizational Leadership & Innovation" },
   { key: "environment-sustainability-science", label: "Environment, Sustainability & Natural Sciences" },
   { key: "global-diplomacy-languages", label: "Global Engagement, Diplomacy & World Languages" },
   { key: "health-wellness", label: "Human Development, Health & Wellness" },
@@ -176,5 +176,13 @@ export function dominantPath(skills: Skill[], entries: Entry[]): { key: CareerPa
     if (!best || n > best.n) best = { key, n };
   }
   return best;
+}
+
+// Most recent activity date across a student's skill evidence + entries, or ""
+// if nothing has been logged yet. Derived, never stored, so it can't drift out
+// of sync with the timeline — same rule as score/level/dominant path.
+export function lastActivityFor(skills: Skill[], entries: Entry[]): string {
+  const dates = toTimelineItems(skills, entries).map((i) => i.date);
+  return dates.length ? dates.reduce((max, d) => (d > max ? d : max)) : "";
 }
 

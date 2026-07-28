@@ -98,7 +98,8 @@ export interface Todo {
 export type Stage = "first-year" | "sophomore" | "junior" | "senior";
 
 export interface Student {
-  id: string;
+  id: string; // equals the Supabase Auth user's id
+  role: Role;
   name: string;
   grad: string; // graduation year, e.g. "2027"
   majors: string[]; // double majors supported

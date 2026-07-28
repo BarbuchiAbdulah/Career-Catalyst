@@ -1,11 +1,30 @@
 import { useMemo, useRef, useState } from "react";
 import type { Student } from "../lib/types";
-import { CATS, ORDER, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
+import { CATS, ORDER, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, lastActivityFor, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
+import { setFlag } from "../lib/storage";
 import { Dial, CatBars, StageBar } from "../components/Readiness";
 import { Timeline } from "../components/Timeline";
 
-type SortKey = "score" | "name" | "grad";
+type SortKey = "score" | "name" | "grad" | "activity";
 type Dir = "asc" | "desc";
+
+const DAY = 86400000;
+function fmtActivity(iso: string): string {
+  if (!iso) return "No activity yet";
+  const days = Math.round((Date.now() - new Date(iso + "T00:00:00").getTime()) / DAY);
+  if (days < 1) return "Today";
+  if (days < 14) return `${days}d ago`;
+  if (days < 60) return `${Math.round(days / 7)}w ago`;
+  return `${Math.round(days / 30)}mo ago`;
+}
+// Same traffic-light idiom as the Status column: recent → good, aging → orange, stale/never → warn.
+function activityColor(iso: string): string {
+  if (!iso) return "var(--warn)";
+  const days = Math.round((Date.now() - new Date(iso + "T00:00:00").getTime()) / DAY);
+  if (days <= 30) return "var(--good)";
+  if (days <= 90) return "var(--orange)";
+  return "var(--warn)";
+}
 
 function SortMark({ active, dir }: { active: boolean; dir: Dir }) {
   return (
@@ -31,19 +50,31 @@ export function StaffView({
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [dir, setDir] = useState<Dir>("asc"); // asc = lowest score first (needs help on top)
+  const [q, setQ] = useState("");
   const liveRef = useRef<HTMLDivElement>(null);
 
   const rows = useMemo(() => {
-    const withScore = students.map((s) => ({ ...s, ...scoreFor(s.skills, s.entries, s.grad) }));
+    const withScore = students.map((s) => ({
+      ...s,
+      ...scoreFor(s.skills, s.entries, s.grad),
+      activity: lastActivityFor(s.skills, s.entries),
+    }));
     const cmp: Record<SortKey, (a: (typeof withScore)[0], b: (typeof withScore)[0]) => number> = {
       score: (a, b) => a.score - b.score,
       name: (a, b) => a.name.localeCompare(b.name),
       grad: (a, b) => a.grad.localeCompare(b.grad),
+      activity: (a, b) => a.activity.localeCompare(b.activity),
     };
     withScore.sort(cmp[sortKey]);
     if (dir === "desc") withScore.reverse();
     return withScore;
   }, [students, sortKey, dir]);
+
+  const filteredRows = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((r) => r.name.toLowerCase().includes(term) || r.majors.some((m) => m.toLowerCase().includes(term)));
+  }, [rows, q]);
 
   function sortBy(k: SortKey) {
     if (k === sortKey) setDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -58,9 +89,12 @@ export function StaffView({
   function toggleFlag(id: string, ev: React.MouseEvent) {
     ev.stopPropagation();
     const s = students.find((x) => x.id === id);
-    setStudents((prev) => prev.map((x) => (x.id === id ? { ...x, flagged: !x.flagged } : x)));
-    if (liveRef.current && s)
-      liveRef.current.textContent = `${s.name} ${s.flagged ? "unflagged" : "flagged for outreach"}.`;
+    if (!s) return;
+    const nextFlagged = !s.flagged;
+    setStudents((prev) => prev.map((x) => (x.id === id ? { ...x, flagged: nextFlagged } : x)));
+    if (liveRef.current)
+      liveRef.current.textContent = `${s.name} ${nextFlagged ? "flagged for outreach" : "unflagged"}.`;
+    setFlag(id, nextFlagged).catch((err) => console.error("Failed to update flag:", err));
   }
 
   if (drill) {
@@ -75,14 +109,19 @@ export function StaffView({
       );
   }
 
-  const needing = rows.filter((r) => band(r.score).key !== "ok").length;
+  const needing = filteredRows.filter((r) => band(r.score).key !== "ok").length;
 
   return (
     <>
       <div className="topbar">
-        <div className="searchbox searchbox--static" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" strokeLinecap="round" /></svg>
-          <span style={{ color: "var(--line)" }}>Lewis &amp; Clark Career Center</span>
+        <div className="searchbox">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" strokeLinecap="round" /></svg>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search students by name or major…"
+            aria-label="Search students by name or major"
+          />
         </div>
         <div className="topbar-id">
           <span className="topbar-avatar" aria-hidden="true">CC</span>
@@ -101,12 +140,13 @@ export function StaffView({
         <div className="sec-head">
           <h2 id="roster-h">Student roster</h2>
           <span className="count">
-            {needing} of {rows.length} below “on track”
+            {needing} of {filteredRows.length} below “on track”
           </span>
         </div>
         <table className="roster">
           <caption>
-            Tip: click a column to sort, or a row to open the student. Lowest scores show first.
+            Tip: click a column to sort, search by name or major, or click a row to open the
+            student. Lowest scores show first.
           </caption>
           <thead>
             <tr>
@@ -127,11 +167,23 @@ export function StaffView({
                 </button>
               </th>
               <th scope="col">Status</th>
+              <th scope="col" aria-sort={ariaSort("activity")}>
+                <button className="sortbtn" onClick={() => sortBy("activity")}>
+                  Last active <SortMark active={sortKey === "activity"} dir={dir} />
+                </button>
+              </th>
               <th scope="col">Outreach</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
+            {filteredRows.length === 0 && (
+              <tr>
+                <td colSpan={7}>
+                  <div className="empty">No students match &ldquo;{q}&rdquo;.</div>
+                </td>
+              </tr>
+            )}
+            {filteredRows.map((r) => {
               const b = band(r.score);
               return (
                 <tr
@@ -163,6 +215,12 @@ export function StaffView({
                     <span className="status">
                       <span className="dot" style={{ background: bandColor(b.key) }} />
                       {b.label}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="status">
+                      <span className="dot" style={{ background: activityColor(r.activity) }} />
+                      {fmtActivity(r.activity)}
                     </span>
                   </td>
                   <td>

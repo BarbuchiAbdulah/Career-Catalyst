@@ -1,42 +1,31 @@
-import type { Role } from "../lib/types";
-
-// Settings is where role is switched — deliberately NOT a header toggle visible from
-// both views. A student never sees the Career Center roster in their nav, and staff
-// never see the student tabs; the only door between the two is here.
+// Role now comes from the authenticated account (students.role in Supabase),
+// not a UI toggle — a student account can never click into the staff roster.
 export function SettingsView({
-  role,
-  onRoleChange,
+  email,
+  onSignOut,
   onReset,
 }: {
-  role: Role;
-  onRoleChange: (r: Role) => void;
+  email: string;
+  onSignOut: () => void;
   onReset: () => void;
 }) {
   return (
     <>
       <p className="eyebrow">Settings</p>
       <h1 className="page">Settings</h1>
-      <p className="lede">
-        In a real deployment, which view you see would be decided by login. For this demo, switch
-        between the Student and Career Center views here.
-      </p>
+      <p className="lede">Signed in as {email}.</p>
 
-      <section className="sec" aria-labelledby="role-h">
-        <div className="sec-head"><h2 id="role-h">View as</h2></div>
-        <div className="roleswitch" role="group" aria-label="Switch view">
-          <button aria-pressed={role === "student"} onClick={() => onRoleChange("student")}>
-            Student
-          </button>
-          <button aria-pressed={role === "staff"} onClick={() => onRoleChange("staff")}>
-            Career Center
-          </button>
-        </div>
+      <section className="sec" aria-labelledby="account-h">
+        <div className="sec-head"><h2 id="account-h">Account</h2></div>
+        <button className="btn btn-outline" onClick={onSignOut}>
+          Sign out
+        </button>
       </section>
 
       <section className="sec" aria-labelledby="data-h">
-        <div className="sec-head"><h2 id="data-h">Demo data</h2></div>
+        <div className="sec-head"><h2 id="data-h">Your data</h2></div>
         <button className="btn btn-outline" onClick={onReset}>
-          Reset demo data
+          Reset my data
         </button>
       </section>
     </>

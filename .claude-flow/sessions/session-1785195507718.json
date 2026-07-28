@@ -1,0 +1,14 @@
+{
+  "id": "session-1785195507718",
+  "startedAt": "2026-07-27T23:38:27.718Z",
+  "cwd": "/Users/barbuchiabba/Documents/GitHub/Career-Catalyst",
+  "context": {},
+  "metrics": {
+    "edits": 0,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "endedAt": "2026-07-27T23:38:31.053Z",
+  "duration": 3335
+}

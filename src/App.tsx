@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
-import type { Role, Student } from "./lib/types";
-import { loadStudents, saveStudents, resetStudents } from "./lib/storage";
+import { useEffect, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import type { Student } from "./lib/types";
+import { supabase, supabaseConfigured } from "./lib/supabaseClient";
+import { fetchMe, fetchRoster, upsertMe, resetMe } from "./lib/storage";
 import { scoreFor, band, bandColor } from "./lib/scoring";
 import { DashboardTab } from "./views/DashboardTab";
 import { ProfileTab } from "./views/ProfileTab";
@@ -8,6 +10,7 @@ import { ApplicationsTab } from "./views/ApplicationsTab";
 import { ResourcesTab } from "./views/ResourcesTab";
 import { StaffView } from "./views/StaffView";
 import { SettingsView } from "./views/SettingsView";
+import { LoginView } from "./views/LoginView";
 
 // Inline SVG icons (no icon dependency). 20px, stroke-based.
 const I = {
@@ -37,19 +40,56 @@ const STUDENT_NAV: { key: StudentPage; label: string; icon: string }[] = [
 ];
 
 export default function App() {
-  const [role, setRole] = useState<Role>("student");
+  // undefined = still checking for an existing session; null = signed out.
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [me, setMe] = useState<Student | null>(null);
+  const [roster, setRoster] = useState<Student[]>([]);
+  const [loadError, setLoadError] = useState("");
+
   const [studentPage, setStudentPage] = useState<StudentPage>("dashboard");
   const [showSettings, setShowSettings] = useState(false);
-  const [students, setStudents] = useState<Student[]>(() => loadStudents());
   const [drill, setDrill] = useState<string | null>(null);
+  const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    saveStudents(students);
-  }, [students]);
+    if (!supabaseConfigured) return;
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
-  const me = students.find((s) => s.id === "me")!;
-  const updateMe = (next: Student) =>
-    setStudents((prev) => prev.map((s) => (s.id === "me" ? next : s)));
+  useEffect(() => {
+    if (!supabaseConfigured || !session) {
+      setMe(null);
+      setRoster([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const mine = await fetchMe(session.user.id);
+        if (cancelled) return;
+        setMe(mine);
+        if (mine?.role === "staff") {
+          const all = await fetchRoster();
+          if (!cancelled) setRoster(all);
+        }
+      } catch (err) {
+        if (!cancelled) setLoadError(err instanceof Error ? err.message : "Couldn't load your profile.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  function updateMe(next: Student) {
+    setMe(next);
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      upsertMe(next).catch((err) => console.error("Failed to save:", err));
+    }, 500);
+  }
 
   function goToPage(p: StudentPage) {
     setStudentPage(p);
@@ -58,18 +98,55 @@ export default function App() {
   function openSettings() {
     setShowSettings(true);
   }
-  function changeRole(r: Role) {
-    setRole(r);
+  async function signOut() {
+    await supabase.auth.signOut();
     setStudentPage("dashboard");
     setDrill(null);
     setShowSettings(false);
   }
-  function reset() {
-    if (confirm("Reset all demo data to its starting state?")) {
-      setStudents(resetStudents());
-      setDrill(null);
-    }
+  async function reset() {
+    if (!me || !confirm("Reset your data to blank? This can't be undone.")) return;
+    const blank = await resetMe(me.id);
+    setMe(blank);
   }
+
+  if (!supabaseConfigured) {
+    return (
+      <div className="authwrap">
+        <div className="authcard">
+          <p className="eyebrow">Setup needed</p>
+          <h1 className="page" style={{ fontSize: 22, marginBottom: 8 }}>Supabase isn't configured yet</h1>
+          <p className="lede">
+            Copy <code>.env.example</code> to <code>.env.local</code>, fill in your Supabase
+            project's URL and anon key, then restart <code>npm run dev</code>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (session === undefined || (session && !me && !loadError)) {
+    return (
+      <div className="authwrap">
+        <p className="lede">Loading…</p>
+      </div>
+    );
+  }
+
+  if (!session) return <LoginView />;
+
+  if (loadError || !me) {
+    return (
+      <div className="authwrap">
+        <div className="authcard">
+          <p className="autherror" role="alert">{loadError || "Couldn't load your profile."}</p>
+          <button className="btn btn-outline" onClick={signOut}>Sign out and try again</button>
+        </div>
+      </div>
+    );
+  }
+
+  const role = me.role;
 
   // Sidebar "me" mini-score, so the shell feels personal like the reference.
   const meScore = scoreFor(me.skills, me.entries, me.grad).score;
@@ -99,9 +176,9 @@ export default function App() {
               ))}
               <p className="side-label">You</p>
               <div className="side-me">
-                <div className="side-me-avatar" aria-hidden="true">{me.name.charAt(0)}</div>
+                <div className="side-me-avatar" aria-hidden="true">{me.name.charAt(0) || "?"}</div>
                 <div className="side-me-text">
-                  <span className="side-me-name">{me.name}</span>
+                  <span className="side-me-name">{me.name || "You"}</span>
                   <span className="side-me-sub" style={{ color: bandColor(meBand.key) }}>
                     {meScore}/100 · {meBand.label}
                   </span>
@@ -128,7 +205,7 @@ export default function App() {
 
       <main id="main" className="content">
         {showSettings ? (
-          <SettingsView role={role} onRoleChange={changeRole} onReset={reset} />
+          <SettingsView email={session.user.email ?? ""} onSignOut={signOut} onReset={reset} />
         ) : role === "student" ? (
           studentPage === "dashboard" ? (
             <DashboardTab student={me} onChange={updateMe} onNavigate={goToPage} />
@@ -140,7 +217,7 @@ export default function App() {
             <ResourcesTab student={me} onChange={updateMe} />
           )
         ) : (
-          <StaffView students={students} setStudents={setStudents} drill={drill} setDrill={setDrill} />
+          <StaffView students={roster} setStudents={setRoster} drill={drill} setDrill={setDrill} />
         )}
       </main>
     </div>

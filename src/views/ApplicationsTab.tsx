@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { AppSource, AppStatus, Application, CareerPath, Student } from "../lib/types";
-import { JOBS } from "../lib/content";
+import { CAREER_CENTER, JOBS } from "../lib/content";
 import { PATHS, pathLabel } from "../lib/scoring";
 import { uid } from "../lib/seed";
 
@@ -163,6 +163,13 @@ export function ApplicationsTab({
             <h2 id="explore-h">Explore opportunities</h2>
             <span className="count">{jobs.length} shown</span>
           </div>
+          <p className="jobcard-blurb" style={{ marginTop: -4, marginBottom: 12 }}>
+            Showing {JOBS.length} curated highlights — browse all current openings on the Career
+            Center's live job board{" "}
+            <a href={CAREER_CENTER.jobBoardUrl} target="_blank" rel="noreferrer" className="linkbtn">
+              (uConnect) →
+            </a>
+          </p>
           <div className="filterrow" role="group" aria-label="Filter by source">
             {(["all", "on-campus", "external"] as const).map((s) => (
               <button key={s} className={"filterchip" + (sourceFilter === s ? " active" : "")} aria-pressed={sourceFilter === s} onClick={() => setSourceFilter(s)}>

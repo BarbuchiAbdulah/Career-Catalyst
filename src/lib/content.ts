@@ -112,18 +112,31 @@ export const ARTICLES: Article[] = [
 export interface PathInfo {
   blurb: string;
   insight: string; // illustrative only — not a sourced labor-market statistic
+  learnMoreUrl: string; // real L&C Career Center page for this path
 }
 
 export const PATH_INFO: Record<Exclude<CareerPath, "">, PathInfo> = {
-  "comm-marketing-pr": { blurb: "Storytelling, brand, and audience — from agencies to in-house teams.", insight: "Illustrative: entry-level roles often value a portfolio over a specific major." },
-  "arts-design-media": { blurb: "Creative and cultural work — studios, museums, publishing, design.", insight: "Illustrative: a strong portfolio typically matters more than GPA in this field." },
-  "data-tech-cs": { blurb: "Analysis, software, and infrastructure — any major, with the right technical skills.", insight: "Illustrative: recruiters commonly screen for one or two specific tools before soft skills." },
-  "econ-leadership-innovation": { blurb: "Finance, consulting, and venture — analytical roles across industries.", insight: "Illustrative: many programs recruit heavily a full year ahead of the start date." },
-  "environment-sustainability-science": { blurb: "Conservation, policy, and field science — public, nonprofit, and private sector.", insight: "Illustrative: field-season and seasonal roles are a common entry point." },
-  "global-diplomacy-languages": { blurb: "International affairs, NGOs, and language-driven work.", insight: "Illustrative: a second language plus one region of focus is a common early differentiator." },
-  "health-wellness": { blurb: "Clinical, research, and wellness-adjacent paths — pre-health and beyond.", insight: "Illustrative: research or clinical hours are frequently weighted heavily before grad-program apply." },
-  "public-service-law-policy": { blurb: "Government, law, and policy research — local to federal.", insight: "Illustrative: legislative fellowships are a common bridge role before law school or a policy career." },
-  "social-services-nonprofit-education": { blurb: "Direct service, education, and mission-driven nonprofit work.", insight: "Illustrative: hands-on volunteer or tutoring experience is often weighted as highly as coursework." },
+  "comm-marketing-pr": { blurb: "Storytelling, brand, and audience — from agencies to in-house teams.", insight: "Illustrative: entry-level roles often value a portfolio over a specific major.", learnMoreUrl: "https://careercenter.lclark.edu/channels/communication-marketing-public-relations/" },
+  "arts-design-media": { blurb: "Creative and cultural work — studios, museums, publishing, design.", insight: "Illustrative: a strong portfolio typically matters more than GPA in this field.", learnMoreUrl: "https://careercenter.lclark.edu/channels/arts-design-media/" },
+  "data-tech-cs": { blurb: "Analysis, software, and infrastructure — any major, with the right technical skills.", insight: "Illustrative: recruiters commonly screen for one or two specific tools before soft skills.", learnMoreUrl: "https://careercenter.lclark.edu/channels/data-science-tech-comp-sci/" },
+  "econ-leadership-innovation": { blurb: "Finance, consulting, and venture — analytical roles across industries.", insight: "Illustrative: many programs recruit heavily a full year ahead of the start date.", learnMoreUrl: "https://careercenter.lclark.edu/channels/economics-organizational-leadership-innovation/" },
+  "environment-sustainability-science": { blurb: "Conservation, policy, and field science — public, nonprofit, and private sector.", insight: "Illustrative: field-season and seasonal roles are a common entry point.", learnMoreUrl: "https://careercenter.lclark.edu/channels/environment-sustainability-natural-sciences/" },
+  "global-diplomacy-languages": { blurb: "International affairs, NGOs, and language-driven work.", insight: "Illustrative: a second language plus one region of focus is a common early differentiator.", learnMoreUrl: "https://careercenter.lclark.edu/channels/global-engagement-diplomacy-world-languages/" },
+  "health-wellness": { blurb: "Clinical, research, and wellness-adjacent paths — pre-health and beyond.", insight: "Illustrative: research or clinical hours are frequently weighted heavily before grad-program apply.", learnMoreUrl: "https://careercenter.lclark.edu/channels/human-development-health-wellness/" },
+  "public-service-law-policy": { blurb: "Government, law, and policy research — local to federal.", insight: "Illustrative: legislative fellowships are a common bridge role before law school or a policy career.", learnMoreUrl: "https://careercenter.lclark.edu/channels/public-service-law-policy/" },
+  "social-services-nonprofit-education": { blurb: "Direct service, education, and mission-driven nonprofit work.", insight: "Illustrative: hands-on volunteer or tutoring experience is often weighted as highly as coursework.", learnMoreUrl: "https://careercenter.lclark.edu/channels/social-services-nonprofit-education/" },
+};
+
+// Real, stable contact info for the actual L&C Career Center — not live data,
+// just public facts (address/hours/phone/email) unlikely to change mid-year.
+export const CAREER_CENTER = {
+  name: "L&C Career Center",
+  location: "Fowler Student Center",
+  hours: "Mon–Fri, 9am–4pm",
+  phone: "503-768-7114",
+  email: "careers@lclark.edu",
+  siteUrl: "https://careercenter.lclark.edu/",
+  jobBoardUrl: "https://careercenter.lclark.edu/jobs/",
 };
 
 export interface AlumniProfile {
