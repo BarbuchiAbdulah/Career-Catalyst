@@ -2,10 +2,16 @@
 
 A career-readiness tool for **Lewis & Clark College**, built for the Career Catalyst Challenge.
 
-L&C students can't see their career readiness — skills, experience, and professional network —
-in one place, and Career Center staff have no way to spot which students need help before it's
-too late. Career Catalyst puts all of it behind one **readiness score** that both the student
-and the Career Center can see.
+L&C students can't see their own career readiness — skills, experience, and professional network
+— in one place, and Career Center staff have no way to spot which students need help before it's
+too late. Career Catalyst puts all of it behind one **readiness score** that both the student and
+the Career Center can see.
+
+The Career Center's current tools (uConnect + Handshake) are a *library* — resources, listings,
+and advice a student reads and forgets. Career Catalyst is the student's own **space that
+accumulates over four years**: log in as a first-year, and by senior year that same space holds
+every skill, experience, and contact you've gathered, with a readiness score that grew alongside
+you and a timeline that becomes your résumé.
 
 ## The core loop
 
@@ -14,14 +20,6 @@ score recomputes instantly → the student sees their dashboard and biggest gap 
 staff see a roster sorted by score, lowest first → staff flag who needs outreach and drill into
 any student for the detail.
 
-## Why it's different from what L&C already has
-
-The Career Center's current tools (uConnect + Handshake) are a *library* — resources, listings,
-and advice a student reads and forgets. Career Catalyst is the student's own **space that
-accumulates over four years**: log in as a first-year, and by senior year that same space holds
-every skill, experience, and contact you've gathered, with a readiness score that grew alongside
-you and a timeline that becomes your résumé.
-
 ## Two views
 
 - **Student** — four tabs:
@@ -29,11 +27,11 @@ you and a timeline that becomes your résumé.
     quick tallies (applications tracked, events attended), and a timeline of everything logged.
   - **Profile** — editable major/interests/headline/resume link/LinkedIn, the log-entry form for
     skills and experience, and a Connections list filterable by relationship (mentor/faculty/
-    alumni/recruiter/friend) and industry.
+    alumni/recruiter/friend/other) and industry.
   - **Applications** — seeded on-campus and external opportunities to explore and save, plus a
     personal tracker with deadlines and status.
-  - **Resources & Events** — resume templates, Career-Center articles, an explore-by-path view,
-    an events list with mark-attended, an alumni directory to connect with, and advising notes.
+  - **Resources & Events** — Career Center services, resume templates, Career-Center articles, an
+    explore-by-path view, an events list with mark-attended, and an alumni directory to connect with.
 - **Career Center** — a sortable roster with the students who need help on top and a **stage
   column** so a low score is read fairly for a first-year vs. a senior, an outreach flag per
   student, and a per-student drill-in with gaps framed as talking points plus their full timeline.
