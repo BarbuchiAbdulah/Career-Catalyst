@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import lcOtterLogo from "../assets/lc-otter.png";
 
 const EMAIL_DOMAIN = "@lclark.edu";
 
@@ -9,38 +10,6 @@ function EyeIcon({ off }: { off: boolean }) {
       <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
       <circle cx="12" cy="12" r="3" />
       {off && <path d="M2 2l20 20" />}
-    </svg>
-  );
-}
-
-// Hand-drawn (not generated) — a simple flat river otter: brown body/head,
-// cream belly/face patch, closed happy eyes, whiskers, and a small stone held
-// between its paws (otters are known for that) so it reads as an otter and
-// not a generic bear/rodent shape.
-function OtterIllustration() {
-  return (
-    <svg viewBox="0 0 300 300" role="img" aria-label="A river otter holding a small stone">
-      <ellipse cx="205" cy="228" rx="62" ry="26" transform="rotate(-22 205 228)" fill="#6B4226" />
-      <ellipse cx="140" cy="205" rx="95" ry="80" fill="#8B5E3C" />
-      <ellipse cx="140" cy="228" rx="54" ry="46" fill="#F3D9C6" />
-      <circle cx="140" cy="112" r="66" fill="#8B5E3C" />
-      <circle cx="97" cy="66" r="16" fill="#6B4226" />
-      <circle cx="183" cy="66" r="16" fill="#6B4226" />
-      <ellipse cx="140" cy="126" rx="46" ry="38" fill="#F3D9C6" />
-      <ellipse cx="106" cy="132" rx="11" ry="7" fill="#E5703A" opacity=".35" />
-      <ellipse cx="174" cy="132" rx="11" ry="7" fill="#E5703A" opacity=".35" />
-      <path d="M112 108q8-10 16 0" stroke="#231F20" strokeWidth="4" strokeLinecap="round" fill="none" />
-      <path d="M152 108q8-10 16 0" stroke="#231F20" strokeWidth="4" strokeLinecap="round" fill="none" />
-      <ellipse cx="140" cy="128" rx="7" ry="5" fill="#231F20" />
-      <g stroke="#231F20" strokeWidth="1.5" strokeLinecap="round" opacity=".55">
-        <path d="M112 132h-24M110 138h-22M112 144h-20" />
-        <path d="M168 132h24M170 138h22M168 144h20" />
-      </g>
-      <ellipse cx="112" cy="252" rx="20" ry="14" fill="#8B5E3C" />
-      <ellipse cx="168" cy="252" rx="20" ry="14" fill="#8B5E3C" />
-      <circle cx="140" cy="246" r="10" fill="#9FA1A4" />
-      <circle cx="137" cy="243" r="2" fill="#5F6062" />
-      <circle cx="143" cy="248" r="1.6" fill="#5F6062" />
     </svg>
   );
 }
@@ -184,7 +153,7 @@ export function LoginView() {
         </div>
 
         <div className="login-art">
-          <OtterIllustration />
+          <img src={lcOtterLogo} alt="Lewis &amp; Clark otter logo" />
         </div>
       </div>
     </div>
