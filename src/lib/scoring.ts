@@ -1,4 +1,4 @@
-import type { Contact, Entry, Skill, ScoreCategory, Readiness, Band, BandKey, Stage, CareerPath, ContactRelationship, SkillLevel, TimelineItem } from "./types";
+import type { Contact, Entry, ExperienceCategory, Skill, ScoreCategory, Readiness, Band, BandKey, Stage, CareerPath, ContactRelationship, SkillLevel, TimelineItem } from "./types";
 
 // Category metadata, grounded in NACE career-readiness areas.
 // `base` is the SENIOR-year target; earlier stages scale down (see STAGE_FACTOR).
@@ -55,6 +55,28 @@ export function pathLabel(key: CareerPath): string {
 // Relationship types a contact entry can carry — lets Profile's Connections list be
 // filtered the way a real network actually breaks down.
 export const RELATIONSHIPS: ContactRelationship[] = ["mentor", "faculty", "alumni", "recruiter", "friend", "other"];
+
+// Experience-type taxonomy — a separate dimension from CareerPath (see Entry
+// in types.ts). Order here is display order for the filter chips.
+export const EXPERIENCE_CATEGORIES: ExperienceCategory[] = [
+  "internship",
+  "research",
+  "study-abroad",
+  "leadership",
+  "volunteer",
+  "campus-involvement",
+  "other",
+];
+
+export const EXPERIENCE_CATEGORY_LABEL: Record<ExperienceCategory, string> = {
+  internship: "Internship",
+  research: "Research",
+  "study-abroad": "Study Abroad",
+  leadership: "Leadership",
+  volunteer: "Volunteer",
+  "campus-involvement": "Campus Involvement",
+  other: "Other",
+};
 
 export const RELATIONSHIP_LABEL: Record<ContactRelationship, string> = {
   mentor: "Mentor",

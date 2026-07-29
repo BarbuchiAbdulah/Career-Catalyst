@@ -268,6 +268,26 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .tag.rel-friend{background:#FDE8EE;color:#B0356B}
 .tag.rel-other{background:var(--paper-2);color:var(--ink-soft)}
 
+/* ---- Experiences tab ---- */
+.expicon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none}
+.expicon.internship{background:#E1EEFB;color:#25588F}
+.expicon.research{background:#EDE7F6;color:#5B3FA6}
+.expicon.study-abroad{background:#FBEAD9;color:#B0561E}
+.expicon.leadership{background:#E4F1E9;color:#22795A}
+.expicon.volunteer{background:#FDE8EE;color:#B0356B}
+.expicon.campus-involvement{background:#E1EEFB;color:#2C6E8F}
+.expicon.other{background:var(--paper-2);color:var(--ink-soft)}
+.expcard-top{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}
+.expcard-name{font-weight:600;font-size:16px;margin:0;display:flex;align-items:center;gap:8px}
+.expcard-org{font-size:13.5px;color:var(--ink-soft);margin:2px 0 0}
+.expcard-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--ink-soft);margin:8px 0}
+.expcard-meta span{display:inline-flex;align-items:center;gap:4px}
+.expcard-actions{display:flex;gap:2px;flex:none}
+.expcard-iconbtn{border:0;background:transparent;color:var(--ink-soft);width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
+.expcard-iconbtn:hover{color:var(--warn);background:#F7E4DC}
+.expcard-iconbtn.chevron:hover{color:var(--orange-deep);background:var(--paper)}
+.expcard-iconbtn.chevron.open svg{transform:rotate(180deg)}
+
 @media(max-width:920px){
   .app{grid-template-columns:1fr}
   .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}

@@ -13,10 +13,10 @@ too late.
 
 ## Two users, one core loop
 
-- **Student** — owns their own profile, across **5 tabs**: Dashboard (read-only overview),
-  Profile (edit identity + log skills/experience), Network (manage connections — its own tab,
-  card-grid layout), Applications (track opportunities), Resources & Events (Career Center
-  content).
+- **Student** — owns their own profile, across **6 tabs**: Dashboard (read-only overview),
+  Profile (edit identity + log skills), Experiences (log internships/research/etc. — its own
+  tab, card-grid layout), Network (manage connections — its own tab, card-grid layout),
+  Applications (track opportunities), Resources & Events (Career Center content).
 - **Staff** (Career Center / peer advisor) — across **2 tabs**: Student roster (sorted by score,
   drills into a student, flags who needs outreach, leaves advising notes) and Insights
   (cohort-wide aggregates: readiness distribution, category strength, by-stage breakdown, career
@@ -53,7 +53,12 @@ never shows the student tabs. See `App.tsx`: `role`/`studentPage`/`showSettings`
   a level directly, or it can drift out of sync with the evidence list.
 - **An experience has `startDate`/`endDate?`/`ongoing`**, not a single `date` — an ongoing role
   displays "Present" and anchors to its start term on the timeline rather than being duplicated
-  across every term it spans.
+  across every term it spans. It also carries `organization`/`location`/`hoursLogged` (all
+  optional — undefined for entries logged before these fields existed) and an `ExperienceCategory`
+  (`category`: internship/research/study-abroad/leadership/volunteer/campus-involvement/other).
+  `category` is a SEPARATE dimension from `path` (`CareerPath`): category describes the FORM of
+  the experience, path describes its career DIRECTION — don't collapse the two. The
+  **Experiences tab** (`ExperiencesTab.tsx`) is its own top-level tab, not part of Profile.
 - **Contacts are deliberately NOT on the four-year timeline.** A connection isn't a "growth
   moment" the way a skill or experience is; Dashboard shows a separate small "Recent connections"
   card instead (see `DashboardTab.tsx`), and the **Network tab** (`NetworkTab.tsx`) has the full
@@ -113,7 +118,8 @@ src/
     Timeline.tsx  # <Timeline> — entries grouped by term into the four-year spine
   views/
     DashboardTab.tsx     # read-only overview: greeting, stat cards, tallies, timeline
-    ProfileTab.tsx       # editable identity + skills/experience log-entry forms
+    ProfileTab.tsx       # editable identity + skills log-entry form
+    ExperiencesTab.tsx   # experiences: searchable/filterable card grid, add+edit form
     NetworkTab.tsx       # connections: searchable/filterable card grid, add+edit form
     ApplicationsTab.tsx  # explore seeded JOBS + personal application tracker
     ResourcesTab.tsx     # templates, articles, paths, events, alumni directory, advising notes

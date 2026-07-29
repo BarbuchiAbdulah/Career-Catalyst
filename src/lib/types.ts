@@ -23,15 +23,31 @@ export type CareerPath =
 // filtered the way a real network is: not everyone is the same kind of contact.
 export type ContactRelationship = "friend" | "mentor" | "recruiter" | "alumni" | "faculty" | "other";
 
+// Type of experience (Internship, Research, ...) — a separate dimension from
+// CareerPath: category describes the FORM of the experience, path describes
+// its career DIRECTION. "other" is the catch-all for anything that doesn't fit.
+export type ExperienceCategory =
+  | "internship"
+  | "research"
+  | "study-abroad"
+  | "leadership"
+  | "volunteer"
+  | "campus-involvement"
+  | "other";
+
 export interface Entry {
   id: string;
   title: string; // what you did
-  meta: string; // optional context: where, when, detail
+  category?: ExperienceCategory; // undefined for legacy entries logged before this field existed
+  organization?: string; // where — e.g. "Patagonia Portland"
+  location?: string; // e.g. "Portland, OR"
+  meta: string; // optional freeform context/detail
   startDate: string; // ISO date "YYYY-MM-DD" — drives the timeline (anchored to start term)
   endDate?: string; // ISO date; absent + ongoing=true reads as "Present"
   ongoing: boolean;
   path: CareerPath; // optional L&C career-path tag
-  tools?: string[]; // tech/tools/software used
+  tools?: string[]; // skills/tools/tech used
+  hoursLogged?: number; // optional — e.g. volunteer hours
 }
 
 // --- Contacts: their own entity, not a repurposed Entry ----------------------

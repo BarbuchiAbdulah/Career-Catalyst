@@ -6,6 +6,7 @@ import { fetchMe, fetchRoster, upsertMe, resetMe } from "./lib/storage";
 import { scoreFor, band, bandColor } from "./lib/scoring";
 import { DashboardTab } from "./views/DashboardTab";
 import { ProfileTab } from "./views/ProfileTab";
+import { ExperiencesTab } from "./views/ExperiencesTab";
 import { NetworkTab } from "./views/NetworkTab";
 import { ApplicationsTab } from "./views/ApplicationsTab";
 import { ResourcesTab } from "./views/ResourcesTab";
@@ -22,6 +23,7 @@ const I = {
   resources: "M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2zM20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2z",
   staff: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
   network: "M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM19 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 8v3m-4.5 5.5L11 13m5.5 3.5L13 13",
+  experiences: "M3 7h18v13H3zM8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18",
   insights: "M3 3v18h18M7 16v-6M12 16V7M17 16v-3",
   cog: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
 };
@@ -34,12 +36,13 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-export type StudentPage = "dashboard" | "profile" | "network" | "applications" | "resources";
+export type StudentPage = "dashboard" | "profile" | "experiences" | "network" | "applications" | "resources";
 export type StaffPage = "roster" | "insights";
 
 const STUDENT_NAV: { key: StudentPage; label: string; icon: string }[] = [
   { key: "dashboard", label: "My dashboard", icon: I.dash },
   { key: "profile", label: "Profile", icon: I.profile },
+  { key: "experiences", label: "Experiences", icon: I.experiences },
   { key: "network", label: "Network", icon: I.network },
   { key: "applications", label: "Applications", icon: I.applications },
   { key: "resources", label: "Resources & Events", icon: I.resources },
@@ -269,6 +272,8 @@ export default function App() {
             <DashboardTab student={me} onChange={updateMe} onNavigate={goToPage} />
           ) : studentPage === "profile" ? (
             <ProfileTab student={me} onChange={updateMe} />
+          ) : studentPage === "experiences" ? (
+            <ExperiencesTab student={me} onChange={updateMe} />
           ) : studentPage === "network" ? (
             <NetworkTab student={me} onChange={updateMe} />
           ) : studentPage === "applications" ? (

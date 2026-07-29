@@ -1,8 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import type { CareerPath, Entry, Student } from "../lib/types";
+import type { CareerPath, Student } from "../lib/types";
 import {
   ADVANCED_AT,
-  CATS,
   PATHS,
   SKILL_LEVEL_LABEL,
   levelFor,
@@ -15,13 +14,6 @@ const today = () => new Date().toISOString().slice(0, 10);
 function fmt(iso: string): string {
   if (!iso) return "";
   return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function dateRange(e: { startDate: string; endDate?: string; ongoing: boolean }): string {
-  const start = fmt(e.startDate);
-  if (e.ongoing) return `${start} – Present`;
-  if (e.endDate) return `${start} – ${fmt(e.endDate)}`;
-  return start;
 }
 
 // A search-and-check multi-select with removable chips — used for majors and
@@ -110,18 +102,6 @@ export function ProfileTab({
   const [newSkillTitle, setNewSkillTitle] = useState("");
   const [newSkillPath, setNewSkillPath] = useState<CareerPath>("");
 
-  const [expSort, setExpSort] = useState<SortMode>("earliest");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<Entry | null>(null);
-
-  const [title, setTitle] = useState("");
-  const [meta, setMeta] = useState("");
-  const [toolsText, setToolsText] = useState("");
-  const [startDate, setStartDate] = useState(today());
-  const [endDate, setEndDate] = useState("");
-  const [ongoing, setOngoing] = useState(false);
-  const [path, setPath] = useState<CareerPath>("");
-
   const liveRef = useRef<HTMLDivElement>(null);
   function announce(msg: string) {
     if (liveRef.current) liveRef.current.textContent = msg;
@@ -190,63 +170,6 @@ export function ProfileTab({
       skills: student.skills.map((s) => (s.id === skillId ? { ...s, evidence: s.evidence.filter((e) => e.id !== evId) } : s)),
     });
   }
-
-  // --- Experience ---------------------------------------------------------
-
-  const sortedExperience = useMemo(() => {
-    const list = [...student.entries];
-    if (expSort === "earliest") list.sort((a, b) => a.startDate.localeCompare(b.startDate));
-    else if (expSort === "newest") list.sort((a, b) => b.startDate.localeCompare(a.startDate));
-    else list.sort((a, b) => a.title.localeCompare(b.title));
-    return list;
-  }, [student.entries, expSort]);
-
-  function addExperience(ev: React.FormEvent) {
-    ev.preventDefault();
-    const t = title.trim();
-    if (!t) return;
-    const tools = toolsText.split(",").map((s) => s.trim()).filter(Boolean);
-    onChange({
-      ...student,
-      entries: [
-        {
-          id: uid(),
-          title: t,
-          meta: meta.trim(),
-          startDate: startDate || today(),
-          endDate: ongoing ? undefined : endDate || undefined,
-          ongoing,
-          path,
-          tools: tools.length ? tools : undefined,
-        },
-        ...student.entries,
-      ],
-    });
-    setTitle("");
-    setMeta("");
-    setToolsText("");
-    setEndDate("");
-    setOngoing(false);
-    announce(`Added experience: ${t}.`);
-  }
-  function delExperience(id: string) {
-    const gone = student.entries.find((x) => x.id === id);
-    onChange({ ...student, entries: student.entries.filter((x) => x.id !== id) });
-    if (gone) announce(`Removed ${gone.title}.`);
-  }
-  function startEdit(entry: Entry) {
-    setEditingId(entry.id);
-    setEditDraft({ ...entry });
-  }
-  function saveEdit() {
-    if (!editDraft) return;
-    onChange({ ...student, entries: student.entries.map((x) => (x.id === editDraft.id ? editDraft : x)) });
-    setEditingId(null);
-    setEditDraft(null);
-    announce("Experience updated.");
-  }
-
-  const skillTitles = new Set(student.skills.map((s) => s.title.toLowerCase()));
 
   return (
     <>
@@ -371,110 +294,6 @@ export function ProfileTab({
               );
             })}
           </div>
-        )}
-      </section>
-
-      {/* Log experience */}
-      <section className="sec" aria-labelledby="log-h">
-        <div className="sec-head"><h2 id="log-h">Log experience</h2></div>
-        <form className="logbar" onSubmit={addExperience}>
-          <div className="field grow">
-            <label htmlFor="etitle">What</label>
-            <input id="etitle" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={CATS.experience.ex} aria-describedby="ehelp" />
-          </div>
-          <div className="field grow">
-            <label htmlFor="emeta">Detail <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <input id="emeta" value={meta} onChange={(e) => setMeta(e.target.value)} placeholder="Where, when, or context" />
-          </div>
-          <div className="field grow">
-            <label htmlFor="estart" className="row-between">
-              <span>Started – Ended</span>
-              <span className="inline-check">
-                <input type="checkbox" checked={ongoing} onChange={(e) => setOngoing(e.target.checked)} />
-                Present
-              </span>
-            </label>
-            <div className="daterange-row">
-              <input id="estart" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} max={today()} />
-              <span aria-hidden="true">–</span>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} disabled={ongoing} aria-label="Ended" />
-            </div>
-          </div>
-          <div className="field grow">
-            <label htmlFor="etools">Tools/tech used <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <input id="etools" value={toolsText} onChange={(e) => setToolsText(e.target.value)} placeholder="e.g. Python, Figma" />
-          </div>
-          <div className="field">
-            <label htmlFor="epath">Career path <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <select id="epath" value={path} onChange={(e) => setPath(e.target.value as CareerPath)}>
-              <option value="">— none —</option>
-              {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-            </select>
-          </div>
-          <button className="btn" type="submit">Add entry</button>
-        </form>
-        <p id="ehelp" className="sr-only">{CATS.experience.help}</p>
-      </section>
-
-      {/* Experience */}
-      <section className="sec" aria-labelledby="port-h">
-        <div className="sec-head">
-          <h2 id="port-h">Experience</h2>
-          <label className="sr-only" htmlFor="exp-sort">Sort experience</label>
-          <select id="exp-sort" className="sortselect" value={expSort} onChange={(e) => setExpSort(e.target.value as SortMode)}>
-            <option value="earliest">Earliest first</option>
-            <option value="newest">Newest first</option>
-            <option value="az">A–Z</option>
-          </select>
-        </div>
-        {sortedExperience.length === 0 ? (
-          <div className="empty">Nothing logged yet.</div>
-        ) : (
-          <ul className="entries">
-            {sortedExperience.map((e) =>
-              editingId === e.id && editDraft ? (
-                <li key={e.id} className="editrow">
-                  <input value={editDraft.title} onChange={(ev) => setEditDraft({ ...editDraft, title: ev.target.value })} placeholder="What" />
-                  <input value={editDraft.meta} onChange={(ev) => setEditDraft({ ...editDraft, meta: ev.target.value })} placeholder="Detail" />
-                  <input type="date" value={editDraft.startDate} onChange={(ev) => setEditDraft({ ...editDraft, startDate: ev.target.value })} max={today()} />
-                  <input type="date" value={editDraft.endDate ?? ""} disabled={editDraft.ongoing} onChange={(ev) => setEditDraft({ ...editDraft, endDate: ev.target.value })} />
-                  <label className="inline-check">
-                    <input type="checkbox" checked={editDraft.ongoing} onChange={(ev) => setEditDraft({ ...editDraft, ongoing: ev.target.checked })} />
-                    Still doing this
-                  </label>
-                  <select className="editrow-select" value={editDraft.path} onChange={(ev) => setEditDraft({ ...editDraft, path: ev.target.value as CareerPath })}>
-                    <option value="">— no career path —</option>
-                    {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-                  </select>
-                  <input
-                    value={(editDraft.tools ?? []).join(", ")}
-                    onChange={(ev) => setEditDraft({ ...editDraft, tools: ev.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                    placeholder="Tools/tech (comma-separated)"
-                  />
-                  <button className="btn btn-sm" onClick={saveEdit}>Save</button>
-                  <button className="btn btn-sm btn-outline" onClick={() => { setEditingId(null); setEditDraft(null); }}>Cancel</button>
-                </li>
-              ) : (
-                <li key={e.id}>
-                  <span className="tag experience">{dateRange(e)}</span>
-                  <span className="entry-main">
-                    <span className="t">{e.title}</span>
-                    {e.meta && <span className="m">{e.meta}</span>}
-                    {e.path && <span className="pathchip">{pathLabel(e.path)}</span>}
-                    {e.tools && e.tools.length > 0 && (
-                      <span className="chiprow" style={{ marginTop: 6 }}>
-                        {e.tools.map((t) => (
-                          <span key={t} className={"pill chip-tool" + (skillTitles.has(t.toLowerCase()) ? " linked" : "")}>{t}</span>
-                        ))}
-                      </span>
-                    )}
-                  </span>
-                  <button className="badge-sm-btn" onClick={() => startEdit(e)}>Edit</button>
-                  <button className="del" onClick={() => delExperience(e.id)} aria-label={`Remove ${e.title}`}>Remove</button>
-                </li>
-              )
-            )}
-          </ul>
         )}
       </section>
 
