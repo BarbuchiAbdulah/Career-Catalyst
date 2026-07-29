@@ -126,6 +126,7 @@ export function SettingsView({
       <h1 className="page">Settings</h1>
       <p className="lede">Signed in as {email}.</p>
 
+      {student.role === "student" && (
       <section className="sec" aria-labelledby="profile-h">
         <div className="sec-head"><h2 id="profile-h">Your profile</h2></div>
 
@@ -191,6 +192,7 @@ export function SettingsView({
           </div>
         )}
       </section>
+      )}
 
       <section className="sec" aria-labelledby="account-h">
         <div className="sec-head"><h2 id="account-h">Account</h2></div>

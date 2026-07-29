@@ -101,6 +101,13 @@ export function LoginView() {
   return (
     <div className="loginwrap">
       <div className="logincard">
+        <div className="login-blob" aria-hidden="true" style={{ width: 320, height: 320, left: -80, bottom: -100, background: "#C4551F", opacity: 0.45 }} />
+        <div className="login-blob" aria-hidden="true" style={{ width: 220, height: 220, right: 20, top: -60, background: "#FFE8D1", opacity: 0.6 }} />
+        <div className="login-blob" aria-hidden="true" style={{ width: 180, height: 180, right: -40, bottom: 40, background: "#FBC9A0", opacity: 0.6 }} />
+        <div className="login-leaf" aria-hidden="true" style={{ width: 14, height: 14, top: "18%", right: "38%", transform: "rotate(30deg)" }} />
+        <div className="login-leaf" aria-hidden="true" style={{ width: 10, height: 10, top: "70%", right: "20%", transform: "rotate(-15deg)", opacity: 0.35 }} />
+        <div className="login-leaf" aria-hidden="true" style={{ width: 18, height: 18, top: "40%", right: "12%", transform: "rotate(60deg)", opacity: 0.3 }} />
+
         <div className="loginform">
           <div className="side-brand" style={{ marginBottom: 20 }}>
             <span className="mark" aria-hidden="true">C</span>
