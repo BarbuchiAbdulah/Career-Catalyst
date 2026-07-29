@@ -254,21 +254,20 @@ export function NetworkTab({
               </button>
               <div className="netcard-top">
                 <span className={"netavatar " + c.relationship} aria-hidden="true">{initials(c.name)}</span>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <h3 className="netcard-name">{c.name}</h3>
-                  {(c.role || c.company) && (
+                  {c.role && <p className="netcard-sub">{c.role}</p>}
+                  {(c.company || c.grad) && (
                     <p className="netcard-sub">
-                      {c.role}
-                      {c.role && c.company && " · "}
                       {c.company}
-                      {c.grad && ` · '${c.grad.slice(-2)}`}
+                      {c.company && c.grad && " · "}
+                      {c.grad && `'${c.grad.slice(-2)}`}
                     </p>
                   )}
                 </div>
               </div>
               <div className="chiprow" style={{ margin: "10px 0 6px" }}>
                 <span className={"tag rel-" + c.relationship}>{RELATIONSHIP_LABEL[c.relationship]}</span>
-                {c.path && <span className="pathchip">{pathLabel(c.path)}</span>}
               </div>
               {c.note && <p className="jobcard-blurb">{c.note}</p>}
               <div className="row-between" style={{ width: "100%", marginTop: 6 }}>

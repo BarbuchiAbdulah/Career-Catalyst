@@ -156,7 +156,7 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .tl-main .t{font-weight:600;font-size:14.5px}
 .tl-main .m{font-size:13px;color:var(--ink-soft)}
 .tl-date{font-family:var(--font-site);font-size:12px;color:var(--ink-soft);flex:none}
-.pathchip{font-size:11px;font-weight:600;color:var(--orange-deep);background:#FBEEE4;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pathchip{font-size:11px;font-weight:600;color:var(--orange-deep);background:#FBEEE4;border-radius:999px;padding:2px 9px;white-space:nowrap;display:inline-block;max-width:180px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
 
 /* ---- Staff stage tag ---- */
 .stagetag{font-size:12px;font-weight:600;color:var(--ink-soft);background:var(--paper-2);border-radius:999px;padding:3px 10px;white-space:nowrap}
@@ -258,7 +258,8 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .strengthdots i{width:7px;height:7px;border-radius:50%;background:var(--paper-2);display:block}
 .strengthdots i.filled{background:var(--orange)}
 .netcard-last{font-size:12px;color:var(--ink-soft)}
-.netcard-actions{display:flex;gap:8px;margin-top:10px}
+.netcard-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.netcard-actions .badge-sm-btn{height:34px;display:inline-flex;align-items:center;box-sizing:border-box}
 .netcard-iconbtn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);width:34px;height:34px;border-radius:8px;display:grid;place-items:center}
 .netcard-iconbtn:hover{border-color:var(--orange);color:var(--orange-deep)}
 .tag.rel-mentor{background:#FBEAD9;color:#B0561E}
@@ -341,7 +342,7 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .filterchip[aria-pressed="true"]{background:var(--ink);color:var(--orange);border-color:var(--ink)}
 
 /* ============ Card grid (Applications/Resources) ============ */
-.cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:4px}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:4px}
 .jobcard,.resourcecard{display:flex;flex-direction:column;gap:8px;align-items:flex-start;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
 .jobcard h3,.resourcecard h3{font-family:var(--font-site);font-weight:600;font-size:16px;margin:0}
 .jobcard-org{font-size:13px;color:var(--ink-soft);margin:0}
