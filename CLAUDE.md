@@ -26,9 +26,13 @@ Core loop: student logs an entry (skill / experience / contact) → readiness sc
 student sees dashboard + gaps → staff see roster sorted by score (and cohort patterns in
 Insights) → staff flag who needs outreach and leave an advising note.
 
-**Role is switched from Settings only** (`views/SettingsView.tsx`), not a header toggle visible
-from both sides — a student's sidebar never shows the Career Center roster, and staff's sidebar
-never shows the student tabs. See `App.tsx`: `role`/`studentPage`/`showSettings` state.
+**Role has no in-app toggle at all** (see the comment atop `views/SettingsView.tsx`) — it comes
+straight from `students.role` in the DB, full stop. A student's sidebar never shows the Career
+Center roster, and staff's sidebar never shows the student tabs, and there is no button anywhere
+that changes an account's own role (a student could otherwise just grant themselves staff access).
+The only way to create a staff account today is to sign up normally, then run
+`update public.students set role = 'staff' where id = '<their auth uid>';` by hand in the
+Supabase SQL Editor. See `App.tsx`: `role`/`studentPage`/`staffPage`/`showSettings` state.
 
 ## Architecture decisions (do not undo without reason)
 
