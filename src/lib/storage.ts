@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import type { Contact, Entry, Student } from "./types";
+import type { AdvisingNote, Contact, Entry, Student } from "./types";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -147,6 +147,18 @@ export async function upsertMe(next: Student): Promise<void> {
 // staff account never gets a blanket UPDATE grant on other students' rows.
 export async function setFlag(studentId: string, flagged: boolean): Promise<void> {
   const { error } = await supabase.rpc("set_student_flag", { target_id: studentId, is_flagged: flagged });
+  if (error) throw error;
+}
+
+// Staff-only — goes through the add_advising_note RPC (security definer) for
+// the same reason setFlag does: no blanket UPDATE grant on other students' rows.
+export async function addAdvisingNote(studentId: string, note: AdvisingNote): Promise<void> {
+  const { error } = await supabase.rpc("add_advising_note", {
+    target_id: studentId,
+    note_id: note.id,
+    note_date: note.date,
+    note_text: note.note,
+  });
   if (error) throw error;
 }
 

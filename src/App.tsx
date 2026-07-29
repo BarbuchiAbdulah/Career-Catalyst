@@ -9,6 +9,7 @@ import { ProfileTab } from "./views/ProfileTab";
 import { ApplicationsTab } from "./views/ApplicationsTab";
 import { ResourcesTab } from "./views/ResourcesTab";
 import { StaffView } from "./views/StaffView";
+import { InsightsTab } from "./views/InsightsTab";
 import { SettingsView } from "./views/SettingsView";
 import { LoginView } from "./views/LoginView";
 
@@ -19,6 +20,7 @@ const I = {
   applications: "M9 3h6a1 1 0 0 1 1 1v1h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2V4a1 1 0 0 1 1-1zM9 3v3h6V3M9 12h6M9 16h6",
   resources: "M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2zM20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2z",
   staff: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  insights: "M3 3v18h18M7 16v-6M12 16V7M17 16v-3",
   cog: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
 };
 
@@ -31,12 +33,18 @@ function Icon({ d }: { d: string }) {
 }
 
 export type StudentPage = "dashboard" | "profile" | "applications" | "resources";
+export type StaffPage = "roster" | "insights";
 
 const STUDENT_NAV: { key: StudentPage; label: string; icon: string }[] = [
   { key: "dashboard", label: "My dashboard", icon: I.dash },
   { key: "profile", label: "Profile", icon: I.profile },
   { key: "applications", label: "Applications", icon: I.applications },
   { key: "resources", label: "Resources & Events", icon: I.resources },
+];
+
+const STAFF_NAV: { key: StaffPage; label: string; icon: string }[] = [
+  { key: "roster", label: "Student roster", icon: I.staff },
+  { key: "insights", label: "Insights", icon: I.insights },
 ];
 
 export default function App() {
@@ -47,6 +55,7 @@ export default function App() {
   const [loadError, setLoadError] = useState("");
 
   const [studentPage, setStudentPage] = useState<StudentPage>("dashboard");
+  const [staffPage, setStaffPage] = useState<StaffPage>("roster");
   const [showSettings, setShowSettings] = useState(false);
   const [drill, setDrill] = useState<string | null>(null);
   const saveTimer = useRef<number | null>(null);
@@ -94,6 +103,11 @@ export default function App() {
   function goToPage(p: StudentPage) {
     setStudentPage(p);
     setShowSettings(false);
+  }
+  function goToStaffPage(p: StaffPage) {
+    setStaffPage(p);
+    setShowSettings(false);
+    setDrill(null);
   }
   function openSettings() {
     setShowSettings(true);
@@ -190,9 +204,16 @@ export default function App() {
           ) : (
             <>
               <p className="side-label">Career Center</p>
-              <button className={"navitem" + (!showSettings ? " active" : "")} onClick={() => setShowSettings(false)} aria-current={!showSettings}>
-                <Icon d={I.staff} /> Student roster
-              </button>
+              {STAFF_NAV.map((item) => (
+                <button
+                  key={item.key}
+                  className={"navitem" + (!showSettings && staffPage === item.key ? " active" : "")}
+                  onClick={() => goToStaffPage(item.key)}
+                  aria-current={!showSettings && staffPage === item.key}
+                >
+                  <Icon d={item.icon} /> {item.label}
+                </button>
+              ))}
             </>
           )}
         </nav>
@@ -219,10 +240,17 @@ export default function App() {
             </button>
           ))
         ) : (
-          <button className={"bottomnav-tab" + (!showSettings ? " active" : "")} onClick={() => setShowSettings(false)} aria-current={!showSettings}>
-            <Icon d={I.staff} />
-            <span>Roster</span>
-          </button>
+          STAFF_NAV.map((item) => (
+            <button
+              key={item.key}
+              className={"bottomnav-tab" + (!showSettings && staffPage === item.key ? " active" : "")}
+              onClick={() => goToStaffPage(item.key)}
+              aria-current={!showSettings && staffPage === item.key}
+            >
+              <Icon d={item.icon} />
+              <span>{item.label === "Student roster" ? "Roster" : item.label}</span>
+            </button>
+          ))
         )}
         <button className={"bottomnav-tab" + (showSettings ? " active" : "")} onClick={openSettings} aria-current={showSettings}>
           <Icon d={I.cog} />
@@ -243,6 +271,8 @@ export default function App() {
           ) : (
             <ResourcesTab student={me} onChange={updateMe} />
           )
+        ) : staffPage === "insights" ? (
+          <InsightsTab students={roster} />
         ) : (
           <StaffView students={roster} setStudents={setRoster} drill={drill} setDrill={setDrill} />
         )}

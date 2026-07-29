@@ -113,6 +113,29 @@ begin
 end;
 $$;
 
+-- Lets staff append an advising/guidance note to a student's row, mirroring
+-- set_student_flag: security definer, no blanket UPDATE grant on other rows.
+-- id/date are generated client-side (same as every other logged entity) and
+-- passed as plain text, so this doesn't depend on gen_random_uuid()/pgcrypto
+-- being enabled on the target project.
+create or replace function public.add_advising_note(target_id uuid, note_id text, note_date text, note_text text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_staff(auth.uid()) then
+    raise exception 'Only staff can add advising notes';
+  end if;
+  update public.students
+  set advising_notes = advising_notes || jsonb_build_array(
+    jsonb_build_object('id', note_id, 'date', note_date, 'note', note_text)
+  )
+  where id = target_id;
+end;
+$$;
+
 -- --- Profile pictures --------------------------------------------------------
 -- One public bucket; a student may only write to the folder named after their
 -- own auth uid, enforced by storage.foldername() reading the object path's

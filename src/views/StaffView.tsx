@@ -1,12 +1,18 @@
 import { useMemo, useRef, useState } from "react";
-import type { Student } from "../lib/types";
+import type { AdvisingNote, Student } from "../lib/types";
 import { CATS, ORDER, RELATIONSHIP_LABEL, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, lastActivityFor, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
-import { setFlag } from "../lib/storage";
+import { addAdvisingNote, setFlag } from "../lib/storage";
+import { uid } from "../lib/seed";
 import { Dial, CatBars, StageBar } from "../components/Readiness";
 import { Timeline } from "../components/Timeline";
 
 type SortKey = "score" | "name" | "grad" | "activity";
 type Dir = "asc" | "desc";
+
+const today = () => new Date().toISOString().slice(0, 10);
+function fmtNoteDate(iso: string): string {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
 
 const DAY = 86400000;
 function fmtActivity(iso: string): string {
@@ -97,6 +103,12 @@ export function StaffView({
     setFlag(id, nextFlagged).catch((err) => console.error("Failed to update flag:", err));
   }
 
+  function addNote(id: string, text: string) {
+    const note: AdvisingNote = { id: uid(), date: today(), note: text };
+    setStudents((prev) => prev.map((x) => (x.id === id ? { ...x, advisingNotes: [note, ...x.advisingNotes] } : x)));
+    addAdvisingNote(id, note).catch((err) => console.error("Failed to add advising note:", err));
+  }
+
   if (drill) {
     const s = students.find((x) => x.id === drill);
     if (s)
@@ -105,6 +117,7 @@ export function StaffView({
           student={s}
           onBack={() => setDrill(null)}
           onFlag={(ev) => toggleFlag(s.id, ev)}
+          onAddNote={(text) => addNote(s.id, text)}
         />
       );
   }
@@ -249,16 +262,30 @@ function StaffDrill({
   student,
   onBack,
   onFlag,
+  onAddNote,
 }: {
   student: Student;
   onBack: () => void;
   onFlag: (ev: React.MouseEvent) => void;
+  onAddNote: (text: string) => void;
 }) {
   const { score, per, stage } = scoreFor(student.skills, student.entries, student.contacts, student.grad);
   const dom = dominantPath(student.skills, student.entries, student.contacts);
   const b = band(score);
   const gaps = ORDER.map((k) => ({ k, need: per[k].target - per[k].n })).filter((g) => g.need > 0);
   const timelineItems = toTimelineItems(student.skills, student.entries);
+  const sortedNotes = [...student.advisingNotes].sort((a, c) => c.date.localeCompare(a.date));
+  const [noteText, setNoteText] = useState("");
+  const noteLiveRef = useRef<HTMLDivElement>(null);
+
+  function submitNote(ev: React.FormEvent) {
+    ev.preventDefault();
+    const t = noteText.trim();
+    if (!t) return;
+    onAddNote(t);
+    setNoteText("");
+    if (noteLiveRef.current) noteLiveRef.current.textContent = `Added advising note for ${student.name}.`;
+  }
 
   return (
     <>
@@ -368,6 +395,41 @@ function StaffDrill({
         </div>
         <Timeline entries={timelineItems} />
       </section>
+
+      <section className="sec" aria-labelledby="d-notes">
+        <div className="sec-head">
+          <h2 id="d-notes">Advising notes</h2>
+          <span className="count">{sortedNotes.length} logged</span>
+        </div>
+        <form className="logbar" onSubmit={submitNote} style={{ marginBottom: 12 }}>
+          <div className="field grow">
+            <label htmlFor="note-text">Add a note for {student.name}</label>
+            <input
+              id="note-text"
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="e.g. Discussed internship search strategy, follow up in 2 weeks"
+            />
+          </div>
+          <button className="btn" type="submit">Add</button>
+        </form>
+        {sortedNotes.length === 0 ? (
+          <div className="empty">No advising notes yet.</div>
+        ) : (
+          <ul className="entries">
+            {sortedNotes.map((n) => (
+              <li key={n.id}>
+                <span className="tag" style={{ background: "var(--paper-2)", color: "var(--ink-soft)" }}>{fmtNoteDate(n.date)}</span>
+                <span className="entry-main">
+                  <span className="t">{n.note}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <div ref={noteLiveRef} className="sr-only" aria-live="polite"></div>
     </>
   );
 }

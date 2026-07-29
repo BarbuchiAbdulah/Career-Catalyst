@@ -142,6 +142,27 @@ export function ResourcesTab({
         </p>
       </section>
 
+      {student.advisingNotes.length > 0 && (
+        <section className="sec" aria-labelledby="adv-h">
+          <div className="sec-head">
+            <h2 id="adv-h">Notes from your Career Center advisor</h2>
+            <span className="count">{student.advisingNotes.length}</span>
+          </div>
+          <ul className="entries">
+            {[...student.advisingNotes]
+              .sort((a, b) => b.date.localeCompare(a.date))
+              .map((n) => (
+                <li key={n.id}>
+                  <span className="tag" style={{ background: "var(--paper-2)", color: "var(--ink-soft)" }}>{fmtDate(n.date)}</span>
+                  <span className="entry-main">
+                    <span className="t">{n.note}</span>
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
+
       <div className="subtabs" role="tablist" aria-label="Resources sections">
         <button role="tab" aria-selected={subTab === "guides"} className={"subtab" + (subTab === "guides" ? " active" : "")} onClick={() => setSubTab("guides")}>Guides</button>
         <button role="tab" aria-selected={subTab === "events"} className={"subtab" + (subTab === "events" ? " active" : "")} onClick={() => setSubTab("events")}>Events</button>
