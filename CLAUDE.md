@@ -13,14 +13,18 @@ too late.
 
 ## Two users, one core loop
 
-- **Student** — owns their own profile, across **4 tabs**: Dashboard (read-only overview),
-  Profile (edit identity + log skills/experience/connections), Applications (track
-  opportunities), Resources & Events (Career Center content).
-- **Staff** (Career Center / peer advisor) — views a roster sorted by score, drills into a
-  student, flags who needs outreach.
+- **Student** — owns their own profile, across **5 tabs**: Dashboard (read-only overview),
+  Profile (edit identity + log skills/experience), Network (manage connections — its own tab,
+  card-grid layout), Applications (track opportunities), Resources & Events (Career Center
+  content).
+- **Staff** (Career Center / peer advisor) — across **2 tabs**: Student roster (sorted by score,
+  drills into a student, flags who needs outreach, leaves advising notes) and Insights
+  (cohort-wide aggregates: readiness distribution, category strength, by-stage breakdown, career
+  path distribution, engagement).
 
 Core loop: student logs an entry (skill / experience / contact) → readiness score recomputes →
-student sees dashboard + gaps → staff see roster sorted by score → staff flag who needs outreach.
+student sees dashboard + gaps → staff see roster sorted by score (and cohort patterns in
+Insights) → staff flag who needs outreach and leave an advising note.
 
 **Role is switched from Settings only** (`views/SettingsView.tsx`), not a header toggle visible
 from both sides — a student's sidebar never shows the Career Center roster, and staff's sidebar
@@ -52,7 +56,10 @@ never shows the student tabs. See `App.tsx`: `role`/`studentPage`/`showSettings`
   across every term it spans.
 - **Contacts are deliberately NOT on the four-year timeline.** A connection isn't a "growth
   moment" the way a skill or experience is; Dashboard shows a separate small "Recent connections"
-  card instead (see `DashboardTab.tsx`), and Profile has the full filterable Connections list.
+  card instead (see `DashboardTab.tsx`), and the **Network tab** (`NetworkTab.tsx`) has the full
+  searchable/filterable card grid of connections — its own top-level tab, not part of Profile.
+  A `Contact` also carries `company`/`role`/`grad` (their info, not the student's own) and a
+  manually-rated `strength` (1–3, not derived — no interaction log exists to derive it from).
 - **Timeline only needs skills + entries flattened.** `toTimelineItems(skills, entries)` in
   `scoring.ts` turns skill evidence + entries into the common `TimelineItem` shape `<Timeline>`
   renders. If you add a new loggable thing, decide deliberately whether it belongs on the
@@ -106,12 +113,14 @@ src/
     Timeline.tsx  # <Timeline> — entries grouped by term into the four-year spine
   views/
     DashboardTab.tsx     # read-only overview: greeting, stat cards, tallies, timeline
-    ProfileTab.tsx       # editable identity + log-entry form + Connections (filterable)
+    ProfileTab.tsx       # editable identity + skills/experience log-entry forms
+    NetworkTab.tsx       # connections: searchable/filterable card grid, add+edit form
     ApplicationsTab.tsx  # explore seeded JOBS + personal application tracker
     ResourcesTab.tsx     # templates, articles, paths, events, alumni directory, advising notes
-    StaffView.tsx        # roster table + StaffDrill (individual student detail) — unchanged
+    StaffView.tsx        # roster table + StaffDrill (student detail + advising notes)
+    InsightsTab.tsx      # staff-facing cohort aggregates: distribution, stage, paths, engagement
     SettingsView.tsx     # role switch + reset demo data — the only door between roles
-  App.tsx         # shell: role-scoped nav, studentPage/showSettings state, persistence wiring
+  App.tsx         # shell: role-scoped nav, studentPage/staffPage/showSettings state, persistence
   main.tsx        # entry point
   styles.css      # all styles; design tokens are CSS vars in :root
 ```

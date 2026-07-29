@@ -36,7 +36,7 @@ function CarouselRow({ children, label }: { children: React.ReactNode; label: st
   );
 }
 
-function MailIcon() {
+export function MailIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -45,7 +45,7 @@ function MailIcon() {
   );
 }
 
-function LinkedinIcon() {
+export function LinkedinIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
       <rect width="24" height="24" rx="4" fill="#0A66C2" />

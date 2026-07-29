@@ -58,11 +58,11 @@ export const RELATIONSHIPS: ContactRelationship[] = ["mentor", "faculty", "alumn
 
 export const RELATIONSHIP_LABEL: Record<ContactRelationship, string> = {
   mentor: "Mentor",
-  faculty: "Faculty",
+  faculty: "Professor",
   alumni: "Alumni",
   recruiter: "Recruiter",
   friend: "Friend",
-  other: "Other",
+  other: "Industry",
 };
 
 // --- Stage / four-year arc -------------------------------------------------

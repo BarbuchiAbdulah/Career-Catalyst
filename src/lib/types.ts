@@ -43,11 +43,15 @@ export interface Contact {
   name: string;
   relationship: ContactRelationship;
   path: CareerPath; // industry
+  company?: string;
+  role?: string; // their job title
+  grad?: string; // their class year, if applicable — distinct from the logged-in student's own grad
+  strength?: 1 | 2 | 3; // manually-rated relationship strength; undefined (legacy contacts) reads as 1
   email?: string;
   phone?: string;
   linkedin?: string;
   note: string;
-  date: string; // ISO date — when added
+  date: string; // ISO date — doubles as "last contact," editable whenever you reconnect
 }
 
 // --- Skills: a growing entity, not a one-off log row --------------------------

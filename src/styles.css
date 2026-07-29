@@ -240,6 +240,34 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .pathlist-label{flex:0 0 260px;color:var(--ink-soft);font-weight:600}
 .pathlist-n{flex:none;width:28px;text-align:right;font-family:var(--font-site);font-weight:700}
 
+/* ---- Network tab ---- */
+.netavatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:15px;flex:none}
+.netavatar.mentor{background:#FBEAD9;color:#B0561E}
+.netavatar.alumni{background:#EDE7F6;color:#5B3FA6}
+.netavatar.recruiter{background:#E1EEFB;color:#25588F}
+.netavatar.faculty{background:#E4F1E9;color:#22795A}
+.netavatar.friend{background:#FDE8EE;color:#B0356B}
+.netavatar.other{background:var(--paper-2);color:var(--ink-soft)}
+.netcard{position:relative}
+.netcard-top{display:flex;align-items:flex-start;gap:12px}
+.netcard-name{font-weight:600;font-size:15.5px;margin:0}
+.netcard-sub{font-size:13px;color:var(--ink-soft);margin:2px 0 0}
+.netcard-del{position:absolute;top:14px;right:14px;border:0;background:transparent;color:var(--ink-soft);padding:6px;border-radius:8px;line-height:0}
+.netcard-del:hover{color:var(--warn);background:#F7E4DC}
+.strengthdots{display:inline-flex;gap:3px;vertical-align:middle}
+.strengthdots i{width:7px;height:7px;border-radius:50%;background:var(--paper-2);display:block}
+.strengthdots i.filled{background:var(--orange)}
+.netcard-last{font-size:12px;color:var(--ink-soft)}
+.netcard-actions{display:flex;gap:8px;margin-top:10px}
+.netcard-iconbtn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);width:34px;height:34px;border-radius:8px;display:grid;place-items:center}
+.netcard-iconbtn:hover{border-color:var(--orange);color:var(--orange-deep)}
+.tag.rel-mentor{background:#FBEAD9;color:#B0561E}
+.tag.rel-alumni{background:#EDE7F6;color:#5B3FA6}
+.tag.rel-recruiter{background:#E1EEFB;color:#25588F}
+.tag.rel-faculty{background:#E4F1E9;color:#22795A}
+.tag.rel-friend{background:#FDE8EE;color:#B0356B}
+.tag.rel-other{background:var(--paper-2);color:var(--ink-soft)}
+
 @media(max-width:920px){
   .app{grid-template-columns:1fr}
   .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}

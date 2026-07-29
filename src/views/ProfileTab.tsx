@@ -1,11 +1,9 @@
 import { useMemo, useRef, useState } from "react";
-import type { CareerPath, Contact, ContactRelationship, Entry, Student } from "../lib/types";
+import type { CareerPath, Entry, Student } from "../lib/types";
 import {
   ADVANCED_AT,
   CATS,
   PATHS,
-  RELATIONSHIPS,
-  RELATIONSHIP_LABEL,
   SKILL_LEVEL_LABEL,
   levelFor,
   pathLabel,
@@ -123,18 +121,6 @@ export function ProfileTab({
   const [endDate, setEndDate] = useState("");
   const [ongoing, setOngoing] = useState(false);
   const [path, setPath] = useState<CareerPath>("");
-
-  const [relFilter, setRelFilter] = useState<ContactRelationship | "all">("all");
-  const [pathFilter, setPathFilter] = useState<CareerPath | "all">("all");
-  const [cName, setCName] = useState("");
-  const [cRelationship, setCRelationship] = useState<ContactRelationship>("mentor");
-  const [cPath, setCPath] = useState<CareerPath>("");
-  const [cEmail, setCEmail] = useState("");
-  const [cPhone, setCPhone] = useState("");
-  const [cLinkedin, setCLinkedin] = useState("");
-  const [cNote, setCNote] = useState("");
-  const [editingContactId, setEditingContactId] = useState<string | null>(null);
-  const [editContactDraft, setEditContactDraft] = useState<Contact | null>(null);
 
   const liveRef = useRef<HTMLDivElement>(null);
   function announce(msg: string) {
@@ -261,57 +247,6 @@ export function ProfileTab({
   }
 
   const skillTitles = new Set(student.skills.map((s) => s.title.toLowerCase()));
-
-  // --- Connections ---------------------------------------------------------
-
-  const shownContacts = student.contacts.filter(
-    (c) => (relFilter === "all" || c.relationship === relFilter) && (pathFilter === "all" || c.path === pathFilter)
-  );
-  const contactRelCounts = useMemo(() => {
-    const m = new Map<ContactRelationship, number>();
-    for (const c of student.contacts) m.set(c.relationship, (m.get(c.relationship) ?? 0) + 1);
-    return m;
-  }, [student.contacts]);
-
-  function addContact(ev: React.FormEvent) {
-    ev.preventDefault();
-    const n = cName.trim();
-    if (!n) return;
-    const contact: Contact = {
-      id: uid(),
-      name: n,
-      relationship: cRelationship,
-      path: cPath,
-      email: cEmail.trim() || undefined,
-      phone: cPhone.trim() || undefined,
-      linkedin: cLinkedin.trim() || undefined,
-      note: cNote.trim(),
-      date: today(),
-    };
-    onChange({ ...student, contacts: [contact, ...student.contacts] });
-    setCName("");
-    setCEmail("");
-    setCPhone("");
-    setCLinkedin("");
-    setCNote("");
-    announce(`Added connection: ${n}.`);
-  }
-  function delContact(id: string) {
-    const gone = student.contacts.find((c) => c.id === id);
-    onChange({ ...student, contacts: student.contacts.filter((c) => c.id !== id) });
-    if (gone) announce(`Removed ${gone.name}.`);
-  }
-  function startEditContact(c: Contact) {
-    setEditingContactId(c.id);
-    setEditContactDraft({ ...c });
-  }
-  function saveEditContact() {
-    if (!editContactDraft) return;
-    onChange({ ...student, contacts: student.contacts.map((c) => (c.id === editContactDraft.id ? editContactDraft : c)) });
-    setEditingContactId(null);
-    setEditContactDraft(null);
-    announce("Connection updated.");
-  }
 
   return (
     <>
@@ -536,115 +471,6 @@ export function ProfileTab({
                   </span>
                   <button className="badge-sm-btn" onClick={() => startEdit(e)}>Edit</button>
                   <button className="del" onClick={() => delExperience(e.id)} aria-label={`Remove ${e.title}`}>Remove</button>
-                </li>
-              )
-            )}
-          </ul>
-        )}
-      </section>
-
-      {/* Connections: their own entity, not a repurposed experience row */}
-      <section className="sec" aria-labelledby="conn-log-h">
-        <div className="sec-head"><h2 id="conn-log-h">Add a connection</h2></div>
-        <form className="logbar" onSubmit={addContact}>
-          <div className="field grow">
-            <label htmlFor="c-name">Name</label>
-            <input id="c-name" value={cName} onChange={(e) => setCName(e.target.value)} placeholder="e.g. Alum in your field" />
-          </div>
-          <div className="field">
-            <label htmlFor="c-rel">Relationship</label>
-            <select id="c-rel" value={cRelationship} onChange={(e) => setCRelationship(e.target.value as ContactRelationship)}>
-              {RELATIONSHIPS.map((r) => <option key={r} value={r}>{RELATIONSHIP_LABEL[r]}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="c-path">Industry <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <select id="c-path" value={cPath} onChange={(e) => setCPath(e.target.value as CareerPath)}>
-              <option value="">— none —</option>
-              {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-            </select>
-          </div>
-          <div className="field grow">
-            <label htmlFor="c-email">Email <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <input id="c-email" type="email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} placeholder="name@example.com" />
-          </div>
-          <div className="field grow">
-            <label htmlFor="c-phone">Phone <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <input id="c-phone" value={cPhone} onChange={(e) => setCPhone(e.target.value)} placeholder="(503) 555-0100" />
-          </div>
-          <div className="field grow">
-            <label htmlFor="c-linkedin">LinkedIn <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <input id="c-linkedin" value={cLinkedin} onChange={(e) => setCLinkedin(e.target.value)} placeholder="linkedin.com/in/…" />
-          </div>
-          <div className="field grow">
-            <label htmlFor="c-note">Note <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <input id="c-note" value={cNote} onChange={(e) => setCNote(e.target.value)} placeholder="How you know them, what you talked about" />
-          </div>
-          <button className="btn" type="submit">Add connection</button>
-        </form>
-      </section>
-
-      <section className="sec" aria-labelledby="conn-h">
-        <div className="sec-head">
-          <h2 id="conn-h">Connections</h2>
-          <span className="count">{shownContacts.length} of {student.contacts.length}</span>
-        </div>
-        <div className="filterrow" role="group" aria-label="Filter connections by relationship">
-          <button className={"filterchip" + (relFilter === "all" ? " active" : "")} aria-pressed={relFilter === "all"} onClick={() => setRelFilter("all")}>
-            All ({student.contacts.length})
-          </button>
-          {RELATIONSHIPS.filter((r) => contactRelCounts.has(r)).map((r) => (
-            <button key={r} className={"filterchip" + (relFilter === r ? " active" : "")} aria-pressed={relFilter === r} onClick={() => setRelFilter(r)}>
-              {RELATIONSHIP_LABEL[r]} ({contactRelCounts.get(r)})
-            </button>
-          ))}
-        </div>
-        <div className="field" style={{ maxWidth: 280, marginBottom: 12 }}>
-          <label htmlFor="conn-path">Filter by industry</label>
-          <select id="conn-path" value={pathFilter} onChange={(e) => setPathFilter(e.target.value as CareerPath | "all")}>
-            <option value="all">All industries</option>
-            {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-          </select>
-        </div>
-        {shownContacts.length === 0 ? (
-          <div className="empty">{student.contacts.length === 0 ? "No connections logged yet — add one above." : "No connections match this filter."}</div>
-        ) : (
-          <ul className="entries">
-            {shownContacts.map((c) =>
-              editingContactId === c.id && editContactDraft ? (
-                <li key={c.id} className="editrow">
-                  <input value={editContactDraft.name} onChange={(ev) => setEditContactDraft({ ...editContactDraft, name: ev.target.value })} placeholder="Name" />
-                  <select className="editrow-select" value={editContactDraft.relationship} onChange={(ev) => setEditContactDraft({ ...editContactDraft, relationship: ev.target.value as ContactRelationship })}>
-                    {RELATIONSHIPS.map((r) => <option key={r} value={r}>{RELATIONSHIP_LABEL[r]}</option>)}
-                  </select>
-                  <select className="editrow-select" value={editContactDraft.path} onChange={(ev) => setEditContactDraft({ ...editContactDraft, path: ev.target.value as CareerPath })}>
-                    <option value="">— no industry —</option>
-                    {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-                  </select>
-                  <input value={editContactDraft.email ?? ""} onChange={(ev) => setEditContactDraft({ ...editContactDraft, email: ev.target.value })} placeholder="Email" />
-                  <input value={editContactDraft.phone ?? ""} onChange={(ev) => setEditContactDraft({ ...editContactDraft, phone: ev.target.value })} placeholder="Phone" />
-                  <input value={editContactDraft.linkedin ?? ""} onChange={(ev) => setEditContactDraft({ ...editContactDraft, linkedin: ev.target.value })} placeholder="LinkedIn" />
-                  <input value={editContactDraft.note} onChange={(ev) => setEditContactDraft({ ...editContactDraft, note: ev.target.value })} placeholder="Note" />
-                  <button className="btn btn-sm" onClick={saveEditContact}>Save</button>
-                  <button className="btn btn-sm btn-outline" onClick={() => { setEditingContactId(null); setEditContactDraft(null); }}>Cancel</button>
-                </li>
-              ) : (
-                <li key={c.id}>
-                  <span className="tag contact">{RELATIONSHIP_LABEL[c.relationship]}</span>
-                  <span className="entry-main">
-                    <span className="t">{c.name}</span>
-                    {c.note && <span className="m">{c.note}</span>}
-                    {c.path && <span className="pathchip">{pathLabel(c.path)}</span>}
-                    {(c.email || c.phone || c.linkedin) && (
-                      <span className="contactinfo">
-                        {c.email && <span>{c.email}</span>}
-                        {c.phone && <span>{c.phone}</span>}
-                        {c.linkedin && <span>{c.linkedin}</span>}
-                      </span>
-                    )}
-                  </span>
-                  <button className="badge-sm-btn" onClick={() => startEditContact(c)}>Edit</button>
-                  <button className="del" onClick={() => delContact(c.id)} aria-label={`Remove ${c.name}`}>Remove</button>
                 </li>
               )
             )}
