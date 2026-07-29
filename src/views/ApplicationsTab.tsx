@@ -168,7 +168,6 @@ export function ApplicationsTab({
 
   return (
     <>
-      <p className="eyebrow">Applications</p>
       <h1 className="page">Track your opportunities</h1>
       <p className="lede">
         Explore on-campus and external opportunities the Career Center curates, save the ones you

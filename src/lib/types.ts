@@ -33,6 +33,7 @@ export type ExperienceCategory =
   | "leadership"
   | "volunteer"
   | "campus-involvement"
+  | "project"
   | "other";
 
 export interface Entry {
@@ -48,6 +49,7 @@ export interface Entry {
   path: CareerPath; // optional L&C career-path tag
   tools?: string[]; // skills/tools/tech used
   hoursLogged?: number; // optional — e.g. volunteer hours
+  link?: string; // optional — GitHub/portfolio/repo link, most useful for "project" entries
 }
 
 // --- Contacts: their own entity, not a repurposed Entry ----------------------

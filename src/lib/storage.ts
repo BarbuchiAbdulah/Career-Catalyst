@@ -60,12 +60,17 @@ function migrateEntries(raw: unknown[], existingContacts: Contact[]): { entries:
     entries.push({
       id: (e.id as string) ?? crypto.randomUUID(),
       title: (e.title as string) ?? "",
+      category: e.category as Entry["category"],
+      organization: e.organization as string | undefined,
+      location: e.location as string | undefined,
       meta: (e.meta as string) ?? "",
       startDate: (e.startDate as string) ?? (e.date as string) ?? today(),
       endDate: e.endDate as string | undefined,
       ongoing: (e.ongoing as boolean) ?? false,
       path: (e.path as Entry["path"]) ?? "",
       tools: e.tools as string[] | undefined,
+      hoursLogged: e.hoursLogged as number | undefined,
+      link: e.link as string | undefined,
     });
   }
   return { entries, contacts };

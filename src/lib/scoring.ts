@@ -65,6 +65,7 @@ export const EXPERIENCE_CATEGORIES: ExperienceCategory[] = [
   "leadership",
   "volunteer",
   "campus-involvement",
+  "project",
   "other",
 ];
 
@@ -75,6 +76,7 @@ export const EXPERIENCE_CATEGORY_LABEL: Record<ExperienceCategory, string> = {
   leadership: "Leadership",
   volunteer: "Volunteer",
   "campus-involvement": "Campus Involvement",
+  project: "Project",
   other: "Other",
 };
 

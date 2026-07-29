@@ -15,6 +15,7 @@ import {
 import { StageBar } from "../components/Readiness";
 import { Timeline } from "../components/Timeline";
 import { uid } from "../lib/seed";
+import { EVENTS } from "../lib/content";
 import type { StudentPage } from "../App";
 
 function greeting(): string {
@@ -29,6 +30,10 @@ const today = () => new Date().toISOString().slice(0, 10);
 function daysUntil(iso: string): number | null {
   if (!iso) return null;
   return Math.round((new Date(iso + "T00:00:00").getTime() - new Date(today() + "T00:00:00").getTime()) / 86400000);
+}
+
+function fmtShort(iso: string): string {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 // The signature element: readiness ring wrapping the student's avatar.
@@ -90,6 +95,29 @@ export function DashboardTab({
   );
   const firstName = student.name.split(" ")[0];
 
+  const isEmpty =
+    student.skills.length === 0 &&
+    student.entries.length === 0 &&
+    student.contacts.length === 0 &&
+    student.applications.length === 0;
+
+  const upcomingDeadlines = useMemo(
+    () =>
+      student.applications
+        .filter((a) => a.deadline && a.status !== "rejected")
+        .map((a) => ({ a, d: daysUntil(a.deadline) }))
+        .filter((x): x is { a: (typeof student.applications)[number]; d: number } => x.d !== null && x.d >= 0 && x.d <= 30)
+        .sort((x, y) => x.d - y.d)
+        .slice(0, 4),
+    [student.applications]
+  );
+  const upcomingEvents = useMemo(() => {
+    const attended = new Set(student.eventsAttended);
+    return EVENTS.filter((e) => !attended.has(e.id) && e.date >= today())
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 4);
+  }, [student.eventsAttended]);
+
   const gap = ORDER.map((k) => ({ k, need: per[k].target - per[k].n }))
     .filter((g) => g.need > 0)
     .sort((a, b2) => b2.need - a.need)[0];
@@ -108,17 +136,6 @@ export function DashboardTab({
       list.push({
         key: `gap:${gap.k}`,
         text: `Log ${gap.need} more ${CATS[gap.k].label.toLowerCase()} ${gap.need === 1 ? "entry" : "entries"} to hit your ${STAGE_LABEL[stage].toLowerCase()} target`,
-      });
-    }
-    const soonest = student.applications
-      .filter((a) => a.deadline && a.status !== "rejected")
-      .map((a) => ({ a, d: daysUntil(a.deadline) }))
-      .filter((x): x is { a: (typeof student.applications)[number]; d: number } => x.d !== null && x.d >= 0 && x.d <= 14)
-      .sort((x, y) => x.d - y.d)[0];
-    if (soonest) {
-      list.push({
-        key: `deadline:${soonest.a.id}`,
-        text: `${soonest.a.role} at ${soonest.a.company} is due in ${soonest.d}d`,
       });
     }
     if (student.eventsAttended.length === 0) {
@@ -147,27 +164,6 @@ export function DashboardTab({
 
   return (
     <>
-      {/* Top bar: search + identity, matching the reference */}
-      <div className="topbar">
-        <div className="searchbox">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" strokeLinecap="round" />
-          </svg>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search your timeline…"
-            aria-label="Search your timeline"
-          />
-        </div>
-        <div className="topbar-id">
-          <span className="topbar-avatar" aria-hidden="true">
-            {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : student.name.charAt(0)}
-          </span>
-          <span className="topbar-name">{firstName}</span>
-        </div>
-      </div>
-
       {/* Greeting banner — the hero, orange, with the ring-avatar as signature */}
       <section className="greet" aria-labelledby="greet-h">
         <div className="greet-copy">
@@ -197,6 +193,29 @@ export function DashboardTab({
           </span>
         </div>
       </section>
+
+      {isEmpty && (
+        <section className="sec" aria-labelledby="start-h">
+          <div className="sec-head"><h2 id="start-h">Get started</h2></div>
+          <div className="cardgrid">
+            <div className="resourcecard">
+              <h3>1. Add a skill</h3>
+              <p className="jobcard-blurb">Something you already have — it counts.</p>
+              <button className="btn btn-sm" onClick={() => onNavigate("experiences")}>Go to Experiences</button>
+            </div>
+            <div className="resourcecard">
+              <h3>2. Log an experience</h3>
+              <p className="jobcard-blurb">A job, class project, or volunteer role.</p>
+              <button className="btn btn-sm" onClick={() => onNavigate("experiences")}>Go to Experiences</button>
+            </div>
+            <div className="resourcecard">
+              <h3>3. Add a connection</h3>
+              <p className="jobcard-blurb">A mentor, professor, or alum you know.</p>
+              <button className="btn btn-sm" onClick={() => onNavigate("network")}>Go to Network</button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Three category stat cards, styled like the reference's "watched" cards */}
       <div className="statcards">
@@ -243,43 +262,76 @@ export function DashboardTab({
 
       <StageBar stage={stage} />
 
-      {/* To-do: computed suggestions + the student's own items */}
-      <section className="sec" aria-labelledby="todo-h">
-        <div className="sec-head"><h2 id="todo-h">To-do</h2></div>
-        <form className="logbar" onSubmit={addTodo} style={{ marginBottom: 12 }}>
-          <div className="field grow">
-            <label htmlFor="todo-text">Add something to keep track of</label>
-            <input id="todo-text" value={todoText} onChange={(e) => setTodoText(e.target.value)} placeholder="e.g. Update resume link before the career fair" />
-          </div>
-          <button className="btn" type="submit">Add</button>
-        </form>
-        {suggestions.length === 0 && student.todos.length === 0 ? (
-          <div className="empty">Nothing on your list — you're caught up.</div>
-        ) : (
-          <ul className="todolist">
-            {suggestions.map((s) => (
-              <li key={s.key} className="todo-suggested">
-                <span className="badge-suggested">Suggested</span>
-                <span className="todo-text">{s.text}</span>
-                <button className="del" onClick={() => dismiss(s.key)}>Dismiss</button>
-              </li>
-            ))}
-            {student.todos.map((t) => (
-              <li key={t.id}>
-                <input type="checkbox" checked={t.done} onChange={() => toggleTodo(t.id)} aria-label={`Mark "${t.text}" ${t.done ? "not done" : "done"}`} />
-                <span className={"todo-text" + (t.done ? " done" : "")}>{t.text}</span>
-                <button className="del" onClick={() => delTodo(t.id)} aria-label={`Remove ${t.text}`}>Remove</button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="dashsplit">
+        {/* Upcoming: application deadlines + not-yet-attended events */}
+        <section className="sec upcoming-block" aria-labelledby="up-h">
+          <div className="sec-head"><h2 id="up-h">Upcoming</h2></div>
+          {upcomingDeadlines.length === 0 && upcomingEvents.length === 0 ? (
+            <div className="empty">Nothing coming up in the next 30 days.</div>
+          ) : (
+            <div className="upcomingbox">
+              {upcomingDeadlines.map(({ a, d }) => (
+                <button key={`dl-${a.id}`} className="upcomingrow" onClick={() => onNavigate("applications")}>
+                  <span className="upcomingtag deadline">Deadline</span>
+                  <span className="upcomingmain">
+                    <span className="upcomingtitle">{a.role}</span>
+                    <span className="upcomingsub">{a.company}</span>
+                  </span>
+                  <span className="upcomingwhen">{d <= 0 ? (d === 0 ? "Today" : "Past due") : `${d}d left`}</span>
+                </button>
+              ))}
+              {upcomingEvents.map((e) => (
+                <button key={`ev-${e.id}`} className="upcomingrow" onClick={() => onNavigate("resources")}>
+                  <span className="upcomingtag event">Event</span>
+                  <span className="upcomingmain">
+                    <span className="upcomingtitle">{e.title}</span>
+                    <span className="upcomingsub">{e.location}</span>
+                  </span>
+                  <span className="upcomingwhen">{fmtShort(e.date)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* To-do: computed suggestions + the student's own items */}
+        <section className="sec todo-block" aria-labelledby="todo-h">
+          <div className="sec-head"><h2 id="todo-h">To-do</h2></div>
+          <form className="todoaddrow" onSubmit={addTodo} style={{ marginBottom: 12 }}>
+            <div className="field">
+              <label htmlFor="todo-text">Add something to keep track of</label>
+              <input id="todo-text" value={todoText} onChange={(e) => setTodoText(e.target.value)} placeholder="e.g. Update resume link before the career fair" />
+            </div>
+            <button className="btn" type="submit">Add</button>
+          </form>
+          {suggestions.length === 0 && student.todos.length === 0 ? (
+            <div className="empty">Nothing on your list — you're caught up.</div>
+          ) : (
+            <ul className="todolist">
+              {suggestions.map((s) => (
+                <li key={s.key} className="todo-suggested">
+                  <span className="badge-suggested">Suggested</span>
+                  <span className="todo-text">{s.text}</span>
+                  <button className="del" onClick={() => dismiss(s.key)}>Dismiss</button>
+                </li>
+              ))}
+              {student.todos.map((t) => (
+                <li key={t.id}>
+                  <input type="checkbox" checked={t.done} onChange={() => toggleTodo(t.id)} aria-label={`Mark "${t.text}" ${t.done ? "not done" : "done"}`} />
+                  <span className={"todo-text" + (t.done ? " done" : "")}>{t.text}</span>
+                  <button className="del" onClick={() => delTodo(t.id)} aria-label={`Remove ${t.text}`}>Remove</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
 
       {/* Connections get their own quiet spot rather than crowding the growth timeline */}
       <section className="sec" aria-labelledby="conn-h">
         <div className="sec-head">
           <h2 id="conn-h">Recent connections</h2>
-          <button className="linkbtn" onClick={() => onNavigate("profile")}>See all in Profile →</button>
+          <button className="linkbtn" onClick={() => onNavigate("network")}>See all in Network →</button>
         </div>
         {recentContacts.length === 0 ? (
           <div className="empty">No connections logged yet.</div>
@@ -302,7 +354,20 @@ export function DashboardTab({
       <section className="sec" aria-labelledby="tl-h">
         <div className="sec-head">
           <h2 id="tl-h">Your four-year timeline</h2>
-          <span className="count">{q.trim() ? `${shown.length} of ${timelineItems.length}` : `${timelineItems.length} entries`}</span>
+          <div className="row" style={{ gap: 14, alignItems: "center" }}>
+            <label className="sec-search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+              </svg>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search timeline…"
+                aria-label="Search your timeline"
+              />
+            </label>
+            <span className="count">{q.trim() ? `${shown.length} of ${timelineItems.length}` : `${timelineItems.length} entries`}</span>
+          </div>
         </div>
         <Timeline entries={shown} />
       </section>

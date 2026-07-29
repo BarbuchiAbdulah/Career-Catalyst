@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import type { CareerPath, Student } from "../lib/types";
 import {
-  ALUMNI_DIRECTORY,
   ARTICLES,
   CAREER_CENTER,
   CAREER_SERVICES,
@@ -10,9 +9,6 @@ import {
   RESUME_TEMPLATES,
 } from "../lib/content";
 import { PATHS, pathLabel } from "../lib/scoring";
-import { uid } from "../lib/seed";
-
-const today = () => new Date().toISOString().slice(0, 10);
 
 function fmtDate(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -20,7 +16,9 @@ function fmtDate(iso: string): string {
 
 // A horizontally scrolling row with keyboard-operable prev/next buttons, so
 // browsing events/alumni doesn't depend on touch-scroll or drag alone.
-function CarouselRow({ children, label }: { children: React.ReactNode; label: string }) {
+// Exported — NetworkTab's "Explore alumni" subtab reuses this for the same
+// browsing pattern, same as it already reuses MailIcon/LinkedinIcon below.
+export function CarouselRow({ children, label }: { children: React.ReactNode; label: string }) {
   const ref = useRef<HTMLDivElement>(null);
   function scroll(dir: 1 | -1) {
     ref.current?.scrollBy({ left: dir * 280, behavior: "smooth" });
@@ -57,7 +55,7 @@ export function LinkedinIcon() {
   );
 }
 
-type SubTab = "guides" | "events" | "alumni";
+type SubTab = "guides" | "events";
 
 export function ResourcesTab({
   student,
@@ -68,7 +66,6 @@ export function ResourcesTab({
 }) {
   const [subTab, setSubTab] = useState<SubTab>("guides");
   const [eventPathFilter, setEventPathFilter] = useState<CareerPath | "all">("all");
-  const [alumniPathFilter, setAlumniPathFilter] = useState<CareerPath | "all">("all");
   const liveRef = useRef<HTMLDivElement>(null);
 
   function announce(msg: string) {
@@ -82,43 +79,17 @@ export function ResourcesTab({
     announce(attended.has(id) ? `Unmarked ${title} as attended.` : `Marked ${title} as attended.`);
   }
 
-  const savedNames = new Set(student.contacts.map((c) => c.name));
-  function saveAlumni(a: (typeof ALUMNI_DIRECTORY)[number]) {
-    if (savedNames.has(a.name)) return;
-    onChange({
-      ...student,
-      contacts: [
-        {
-          id: uid(),
-          name: a.name,
-          relationship: "alumni",
-          path: a.path,
-          email: a.email,
-          linkedin: a.linkedin,
-          note: `${a.role} · Class of ${a.grad}`,
-          date: today(),
-        },
-        ...student.contacts,
-      ],
-    });
-    announce(`Saved ${a.name} to your connections.`);
-  }
-
   const sortedEvents = [...EVENTS]
     .filter((e) => eventPathFilter === "all" || e.path === eventPathFilter)
     .sort((a, b) => a.date.localeCompare(b.date));
   const eventPaths = [...new Set(EVENTS.map((e) => e.path).filter(Boolean))] as Exclude<CareerPath, "">[];
 
-  const filteredAlumni = ALUMNI_DIRECTORY.filter((a) => alumniPathFilter === "all" || a.path === alumniPathFilter);
-  const alumniPaths = [...new Set(ALUMNI_DIRECTORY.map((a) => a.path).filter(Boolean))] as Exclude<CareerPath, "">[];
-
   return (
     <>
-      <p className="eyebrow">Resources &amp; Events</p>
       <h1 className="page">Everything the Career Center has for you</h1>
       <p className="lede">
-        Templates, career-path explainers, upcoming events, alumni to connect with, and a direct
-        line to the Career Center itself.
+        Templates, career-path explainers, upcoming events, and a direct line to the Career Center
+        itself. Looking for alumni to connect with? That's moved to the Network tab.
       </p>
 
       {/* Career Center services — highest-intent action, always visible, no tab click needed */}
@@ -129,7 +100,7 @@ export function ResourcesTab({
             <div className="resourcecard" key={s.id}>
               <h3>{s.title}</h3>
               <p className="jobcard-blurb">{s.description}</p>
-              <button className="btn btn-sm btn-outline" type="button">{s.cta}</button>
+              <a href={CAREER_CENTER.siteUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline">{s.cta}</a>
             </div>
           ))}
         </div>
@@ -166,7 +137,6 @@ export function ResourcesTab({
       <div className="subtabs" role="tablist" aria-label="Resources sections">
         <button role="tab" aria-selected={subTab === "guides"} className={"subtab" + (subTab === "guides" ? " active" : "")} onClick={() => setSubTab("guides")}>Guides</button>
         <button role="tab" aria-selected={subTab === "events"} className={"subtab" + (subTab === "events" ? " active" : "")} onClick={() => setSubTab("events")}>Events</button>
-        <button role="tab" aria-selected={subTab === "alumni"} className={"subtab" + (subTab === "alumni" ? " active" : "")} onClick={() => setSubTab("alumni")}>Alumni</button>
       </div>
 
       {subTab === "guides" && (
@@ -268,55 +238,6 @@ export function ResourcesTab({
               See all events on the Career Center site →
             </a>
           </p>
-        </section>
-      )}
-
-      {subTab === "alumni" && (
-        <section className="sec" aria-labelledby="alum-h">
-          <div className="sec-head"><h2 id="alum-h">Alumni to connect with</h2></div>
-          <div className="filterrow" role="group" aria-label="Filter alumni by career path">
-            <button className={"filterchip" + (alumniPathFilter === "all" ? " active" : "")} aria-pressed={alumniPathFilter === "all"} onClick={() => setAlumniPathFilter("all")}>All</button>
-            {alumniPaths.map((p) => (
-              <button key={p} className={"filterchip" + (alumniPathFilter === p ? " active" : "")} aria-pressed={alumniPathFilter === p} onClick={() => setAlumniPathFilter(p)}>
-                {pathLabel(p)}
-              </button>
-            ))}
-          </div>
-          {filteredAlumni.length === 0 ? (
-            <div className="empty">No alumni match this filter.</div>
-          ) : (
-            <CarouselRow label="alumni">
-              {filteredAlumni.map((a) => {
-                const saved = savedNames.has(a.name);
-                return (
-                  <div className="resourcecard" key={a.id}>
-                    <span className="avatarring" aria-hidden="true">{a.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>
-                    <h3>{a.name}</h3>
-                    <p className="jobcard-org">{a.role} · Class of {a.grad}</p>
-                    <p className="jobcard-blurb">{a.blurb}</p>
-                    <span className="pathchip">{pathLabel(a.path)}</span>
-                    <span className="contactinfo">
-                      <a href={`mailto:${a.email}`} className="linkicon" aria-label={`Email ${a.name}`}>
-                        <MailIcon />
-                      </a>
-                      <a
-                        href={a.linkedin.startsWith("http") ? a.linkedin : `https://${a.linkedin}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="linkicon"
-                        aria-label={`${a.name}'s LinkedIn profile`}
-                      >
-                        <LinkedinIcon />
-                      </a>
-                    </span>
-                    <button className="btn btn-sm" disabled={saved} onClick={() => saveAlumni(a)}>
-                      {saved ? "Saved" : "Save as connection"}
-                    </button>
-                  </div>
-                );
-              })}
-            </CarouselRow>
-          )}
         </section>
       )}
 

@@ -2,7 +2,8 @@ import { useMemo, useRef, useState } from "react";
 import type { CareerPath, Contact, ContactRelationship, Student } from "../lib/types";
 import { PATHS, RELATIONSHIPS, RELATIONSHIP_LABEL, pathLabel } from "../lib/scoring";
 import { uid } from "../lib/seed";
-import { MailIcon, LinkedinIcon } from "./ResourcesTab";
+import { ALUMNI_DIRECTORY } from "../lib/content";
+import { CarouselRow, MailIcon, LinkedinIcon } from "./ResourcesTab";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const DAY = 86400000;
@@ -15,6 +16,12 @@ function fmtLast(iso: string): string {
   if (days < 14) return `Last: ${days} days ago`;
   if (days < 60) return `Last: ${Math.round(days / 7)} weeks ago`;
   return `Last: ${Math.round(days / 30)} months ago`;
+}
+
+function isStale(iso: string): boolean {
+  if (!iso) return false;
+  const days = Math.round((Date.now() - new Date(iso + "T00:00:00").getTime()) / DAY);
+  return days >= 60;
 }
 
 function initials(name: string): string {
@@ -54,6 +61,8 @@ const emptyDraft = (): Omit<Contact, "id"> => ({
   date: today(),
 });
 
+type SubTab = "connections" | "explore";
+
 export function NetworkTab({
   student,
   onChange,
@@ -61,16 +70,42 @@ export function NetworkTab({
   student: Student;
   onChange: (next: Student) => void;
 }) {
+  const [subTab, setSubTab] = useState<SubTab>("connections");
   const [q, setQ] = useState("");
   const [relFilter, setRelFilter] = useState<ContactRelationship | "all">("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Omit<Contact, "id">>(emptyDraft());
+  const [alumniPathFilter, setAlumniPathFilter] = useState<CareerPath | "all">("all");
   const liveRef = useRef<HTMLDivElement>(null);
 
   function announce(msg: string) {
     if (liveRef.current) liveRef.current.textContent = msg;
   }
+
+  const savedNames = new Set(student.contacts.map((c) => c.name));
+  function saveAlumni(a: (typeof ALUMNI_DIRECTORY)[number]) {
+    if (savedNames.has(a.name)) return;
+    onChange({
+      ...student,
+      contacts: [
+        {
+          id: uid(),
+          name: a.name,
+          relationship: "alumni",
+          path: a.path,
+          email: a.email,
+          linkedin: a.linkedin,
+          note: `${a.role} · Class of ${a.grad}`,
+          date: today(),
+        },
+        ...student.contacts,
+      ],
+    });
+    announce(`Saved ${a.name} to your connections.`);
+  }
+  const filteredAlumni = ALUMNI_DIRECTORY.filter((a) => alumniPathFilter === "all" || a.path === alumniPathFilter);
+  const alumniPaths = [...new Set(ALUMNI_DIRECTORY.map((a) => a.path).filter(Boolean))] as Exclude<CareerPath, "">[];
 
   const relCounts = useMemo(() => {
     const m = new Map<ContactRelationship, number>();
@@ -131,6 +166,71 @@ export function NetworkTab({
 
   return (
     <>
+      <div className="row-between" style={{ alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1 className="page">Your network</h1>
+          <p className="lede">Mentors, alumni, recruiters, and industry contacts — plus alumni to discover and connect with.</p>
+        </div>
+        {subTab === "connections" && <button className="btn" onClick={openAdd}>+ Add Contact</button>}
+      </div>
+
+      <div className="subtabs" role="tablist" aria-label="Network sections">
+        <button role="tab" aria-selected={subTab === "connections"} className={"subtab" + (subTab === "connections" ? " active" : "")} onClick={() => setSubTab("connections")}>
+          Your connections ({student.contacts.length})
+        </button>
+        <button role="tab" aria-selected={subTab === "explore"} className={"subtab" + (subTab === "explore" ? " active" : "")} onClick={() => setSubTab("explore")}>
+          Explore alumni
+        </button>
+      </div>
+
+      {subTab === "explore" ? (
+        <section className="sec" aria-labelledby="alum-h">
+          <div className="sec-head"><h2 id="alum-h">Alumni to connect with</h2></div>
+          <div className="field" style={{ maxWidth: 320, marginBottom: 12 }}>
+            <label htmlFor="alumni-path">Filter by career path</label>
+            <select id="alumni-path" value={alumniPathFilter} onChange={(e) => setAlumniPathFilter(e.target.value as CareerPath | "all")}>
+              <option value="all">All paths</option>
+              {alumniPaths.map((p) => <option key={p} value={p}>{pathLabel(p)}</option>)}
+            </select>
+          </div>
+          {filteredAlumni.length === 0 ? (
+            <div className="empty">No alumni match this filter.</div>
+          ) : (
+            <CarouselRow label="alumni">
+              {filteredAlumni.map((a) => {
+                const saved = savedNames.has(a.name);
+                return (
+                  <div className="resourcecard" key={a.id}>
+                    <span className="avatarring" aria-hidden="true">{a.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>
+                    <h3>{a.name}</h3>
+                    <p className="jobcard-org">{a.role} · Class of {a.grad}</p>
+                    <p className="jobcard-blurb">{a.blurb}</p>
+                    <span className="pathchip">{pathLabel(a.path)}</span>
+                    <span className="contactinfo">
+                      <a href={`mailto:${a.email}`} className="linkicon" aria-label={`Email ${a.name}`}>
+                        <MailIcon />
+                      </a>
+                      <a
+                        href={a.linkedin.startsWith("http") ? a.linkedin : `https://${a.linkedin}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="linkicon"
+                        aria-label={`${a.name}'s LinkedIn profile`}
+                      >
+                        <LinkedinIcon />
+                      </a>
+                    </span>
+                    <button className="btn btn-sm" disabled={saved} onClick={() => saveAlumni(a)}>
+                      {saved ? "Saved" : "Save as connection"}
+                    </button>
+                  </div>
+                );
+              })}
+            </CarouselRow>
+          )}
+        </section>
+      ) : (
+        <>
       <div className="topbar">
         <div className="searchbox">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -143,15 +243,6 @@ export function NetworkTab({
             aria-label="Search connections by name, company, or tag"
           />
         </div>
-      </div>
-
-      <div className="row-between" style={{ alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <p className="eyebrow">Professional network</p>
-          <h1 className="page">Your connections</h1>
-          <p className="lede">Mentors, alumni, recruiters, and industry contacts you've built over four years.</p>
-        </div>
-        <button className="btn" onClick={openAdd}>+ Add Contact</button>
       </div>
 
       <div className="filterrow" role="group" aria-label="Filter connections by relationship">
@@ -249,32 +340,35 @@ export function NetworkTab({
         <div className="cardgrid">
           {shown.map((c) => (
             <div className="resourcecard netcard" key={c.id}>
-              <button className="netcard-del" onClick={() => delContact(c)} aria-label={`Remove ${c.name}`}>
-                <TrashIcon />
-              </button>
               <div className="netcard-top">
-                <span className={"netavatar " + c.relationship} aria-hidden="true">{initials(c.name)}</span>
-                <div style={{ minWidth: 0 }}>
-                  <h3 className="netcard-name">{c.name}</h3>
-                  {c.role && <p className="netcard-sub">{c.role}</p>}
-                  {(c.company || c.grad) && (
-                    <p className="netcard-sub">
-                      {c.company}
-                      {c.company && c.grad && " · "}
-                      {c.grad && `'${c.grad.slice(-2)}`}
-                    </p>
-                  )}
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start", minWidth: 0 }}>
+                  <span className={"netavatar " + c.relationship} aria-hidden="true">{initials(c.name)}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <h3 className="netcard-name">{c.name}</h3>
+                    {c.role && <p className="netcard-sub">{c.role}</p>}
+                    {(c.company || c.grad) && (
+                      <p className="netcard-sub">
+                        {c.company}
+                        {c.company && c.grad && " · "}
+                        {c.grad && `'${c.grad.slice(-2)}`}
+                      </p>
+                    )}
+                  </div>
                 </div>
+                <button className="expcard-iconbtn" onClick={() => delContact(c)} aria-label={`Remove ${c.name}`}>
+                  <TrashIcon />
+                </button>
               </div>
               <div className="chiprow" style={{ margin: "10px 0 6px" }}>
                 <span className={"tag rel-" + c.relationship}>{RELATIONSHIP_LABEL[c.relationship]}</span>
+                {c.path && <span className="pathchip">{pathLabel(c.path)}</span>}
               </div>
               {c.note && <p className="jobcard-blurb">{c.note}</p>}
               <div className="row-between" style={{ width: "100%", marginTop: 6 }}>
                 <span className="strengthdots" role="img" aria-label={`Relationship strength ${c.strength ?? 1} of 3`}>
                   <StrengthDots n={c.strength ?? 1} />
                 </span>
-                <span className="netcard-last">{fmtLast(c.date)}</span>
+                <span className={"netcard-last" + (isStale(c.date) ? " stale" : "")}>{fmtLast(c.date)}</span>
               </div>
               <div className="netcard-actions">
                 {c.email && (
@@ -298,6 +392,8 @@ export function NetworkTab({
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
 
       <div ref={liveRef} className="sr-only" aria-live="polite"></div>

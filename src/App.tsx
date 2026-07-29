@@ -5,7 +5,6 @@ import { supabase, supabaseConfigured } from "./lib/supabaseClient";
 import { fetchMe, fetchRoster, upsertMe, resetMe, loadDemoData } from "./lib/storage";
 import { scoreFor, band, bandColor } from "./lib/scoring";
 import { DashboardTab } from "./views/DashboardTab";
-import { ProfileTab } from "./views/ProfileTab";
 import { ExperiencesTab } from "./views/ExperiencesTab";
 import { NetworkTab } from "./views/NetworkTab";
 import { ApplicationsTab } from "./views/ApplicationsTab";
@@ -18,7 +17,6 @@ import { LoginView } from "./views/LoginView";
 // Inline SVG icons (no icon dependency). 20px, stroke-based.
 const I = {
   dash: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",
-  profile: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
   applications: "M9 3h6a1 1 0 0 1 1 1v1h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2V4a1 1 0 0 1 1-1zM9 3v3h6V3M9 12h6M9 16h6",
   resources: "M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2zM20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2z",
   staff: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
@@ -36,12 +34,11 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-export type StudentPage = "dashboard" | "profile" | "experiences" | "network" | "applications" | "resources";
+export type StudentPage = "dashboard" | "experiences" | "network" | "applications" | "resources";
 export type StaffPage = "roster" | "insights";
 
 const STUDENT_NAV: { key: StudentPage; label: string; icon: string }[] = [
   { key: "dashboard", label: "My dashboard", icon: I.dash },
-  { key: "profile", label: "Profile", icon: I.profile },
   { key: "experiences", label: "Experiences", icon: I.experiences },
   { key: "network", label: "Network", icon: I.network },
   { key: "applications", label: "Applications", icon: I.applications },
@@ -199,8 +196,7 @@ export default function App() {
                   <Icon d={item.icon} /> {item.label}
                 </button>
               ))}
-              <p className="side-label">You</p>
-              <div className="side-me">
+              <button type="button" className="side-me" onClick={openSettings} aria-label="Open your profile in Settings">
                 <div className="side-me-avatar" aria-hidden="true">
                   {me.avatarUrl ? <img src={me.avatarUrl} alt="" /> : me.name.charAt(0) || "?"}
                 </div>
@@ -210,7 +206,7 @@ export default function App() {
                     {meScore}/100 · {meBand.label}
                   </span>
                 </div>
-              </div>
+              </button>
             </>
           ) : (
             <>
@@ -275,8 +271,6 @@ export default function App() {
         ) : role === "student" ? (
           studentPage === "dashboard" ? (
             <DashboardTab student={me} onChange={updateMe} onNavigate={goToPage} />
-          ) : studentPage === "profile" ? (
-            <ProfileTab student={me} onChange={updateMe} />
           ) : studentPage === "experiences" ? (
             <ExperiencesTab student={me} onChange={updateMe} />
           ) : studentPage === "network" ? (

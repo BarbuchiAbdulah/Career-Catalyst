@@ -1,6 +1,7 @@
 :root{
   --orange:#E5703A;
   --orange-deep:#C4551F;
+  --orange-btn:#B8501C; /* solid-fill buttons need ~4.5:1+ with white text; --orange alone is ~3.1:1 */
   --ink:#231F20;
   --ink-soft:#5F6062;
   --line:#9FA1A4;
@@ -10,7 +11,7 @@
   --good:#2E7D5B;
   --warn:#C4551F;
   --focus:#1A73E8;
-  --shadow:0 1px 2px rgba(35,31,32,.06), 0 8px 24px rgba(35,31,32,.06);
+  --shadow:0 1px 2px rgba(35,31,32,.04), 0 4px 14px rgba(35,31,32,.05);
   --default_font_family:-apple-system,BlinkMacSystemFont,sans-serif;
   --font-site:var(--default_font_family),"Helvetica Condensed",Arial,Helvetica,"Nimbus Sans L",sans-serif;
 }
@@ -73,8 +74,8 @@ h1.page{font-family:var(--font-site);font-weight:600;font-size:clamp(28px,4vw,40
 .field input,.field select{font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);min-width:150px}
 .field.grow{flex:1;min-width:200px}
 .field.grow input{width:100%}
-.btn{border:0;background:var(--orange);color:#fff;font-weight:600;font-size:14px;padding:11px 20px;border-radius:10px;box-shadow:var(--shadow);text-decoration:none;display:inline-block}
-.btn:hover{background:var(--orange-deep)}
+.btn{border:0;background:var(--orange-btn);color:#fff;font-weight:600;font-size:14px;padding:11px 20px;border-radius:10px;box-shadow:var(--shadow);text-decoration:none;display:inline-block}
+.btn:hover{filter:brightness(.92)}
 
 ul.entries{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 ul.entries li{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--paper-2);border-radius:12px;padding:12px 16px}
@@ -180,7 +181,8 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .navitem.active{background:#FBEEE4;color:var(--orange-deep);font-weight:600}
 .navitem.active svg{color:var(--orange)}
 .navitem.danger{color:var(--warn)}
-.side-me{display:flex;align-items:center;gap:11px;padding:8px 8px 4px}
+.side-me{display:flex;align-items:center;gap:11px;padding:8px 8px 4px;width:100%;border:0;background:transparent;font:inherit;text-align:left;border-radius:11px;cursor:pointer}
+.side-me:hover{background:var(--paper)}
 .side-me-avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-weight:700;font-family:var(--font-site);flex:none;overflow:hidden}
 .side-me-avatar img,.topbar-avatar img,.ringavatar-face img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .side-me-text{display:flex;flex-direction:column;min-width:0}
@@ -199,8 +201,7 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .topbar-name{font-weight:600;font-size:14.5px}
 
 /* ---- Greeting banner (hero) ---- */
-.greet{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;background:linear-gradient(120deg,var(--orange) 0%,var(--orange-deep) 100%);color:#fff;border-radius:22px;padding:34px 36px;position:relative;overflow:hidden}
-.greet::after{content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%);pointer-events:none}
+.greet{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;background:var(--orange-deep);color:#fff;border-radius:20px;padding:34px 36px;position:relative}
 .greet-eyebrow{font-family:var(--font-site);font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin:0 0 6px}
 .greet h1{font-family:var(--font-site);font-weight:600;font-size:clamp(24px,3.2vw,34px);letter-spacing:-.02em;margin:0 0 8px}
 .greet-sub{margin:0 0 14px;opacity:.92;max-width:46ch}
@@ -249,15 +250,14 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .netavatar.friend{background:#FDE8EE;color:#B0356B}
 .netavatar.other{background:var(--paper-2);color:var(--ink-soft)}
 .netcard{position:relative}
-.netcard-top{display:flex;align-items:flex-start;gap:12px}
+.netcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .netcard-name{font-weight:600;font-size:15.5px;margin:0}
 .netcard-sub{font-size:13px;color:var(--ink-soft);margin:2px 0 0}
-.netcard-del{position:absolute;top:14px;right:14px;border:0;background:transparent;color:var(--ink-soft);padding:6px;border-radius:8px;line-height:0}
-.netcard-del:hover{color:var(--warn);background:#F7E4DC}
 .strengthdots{display:inline-flex;gap:3px;vertical-align:middle}
 .strengthdots i{width:7px;height:7px;border-radius:50%;background:var(--paper-2);display:block}
 .strengthdots i.filled{background:var(--orange)}
 .netcard-last{font-size:12px;color:var(--ink-soft)}
+.netcard-last.stale{color:var(--warn);font-weight:600}
 .netcard-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
 .netcard-actions .badge-sm-btn{height:34px;display:inline-flex;align-items:center;box-sizing:border-box}
 .netcard-iconbtn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);width:34px;height:34px;border-radius:8px;display:grid;place-items:center}
@@ -277,9 +277,11 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .expicon.leadership{background:#E4F1E9;color:#22795A}
 .expicon.volunteer{background:#FDE8EE;color:#B0356B}
 .expicon.campus-involvement{background:#E1EEFB;color:#2C6E8F}
+.expicon.project{background:#FDEBD3;color:#B0561E}
 .expicon.other{background:var(--paper-2);color:var(--ink-soft)}
-.expcard-top{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}
-.expcard-name{font-weight:600;font-size:16px;margin:0;display:flex;align-items:center;gap:8px}
+.expcard-top{display:flex;align-items:flex-start;gap:12px}
+.expcard-titleblock{flex:1;min-width:0}
+.expcard-name{font-weight:600;font-size:16px;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .expcard-org{font-size:13.5px;color:var(--ink-soft);margin:2px 0 0}
 .expcard-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--ink-soft);margin:8px 0}
 .expcard-meta span{display:inline-flex;align-items:center;gap:4px}
@@ -324,7 +326,10 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .profile-header .profileavatar{width:72px;height:72px;font-size:27px}
 .profile-header-name{font-family:var(--font-site);font-weight:700;font-size:19px}
 .profile-header-sub{font-size:13px;color:var(--ink-soft)}
-.profile-header-hint{margin:0 0 0 auto;font-size:12.5px;color:var(--ink-soft)}
+.profile-header-photo{margin:0 0 0 auto}
+
+/* ============ Profile: resume/LinkedIn generator ============ */
+.generatebox{width:100%;min-height:220px;font-family:var(--font-site);font-size:13.5px;line-height:1.6;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);resize:vertical;white-space:pre-wrap}
 
 /* ============ Majors/minors: their own visible card ============ */
 .majorscard{background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
@@ -336,7 +341,7 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .daterange-row input{flex:1;min-width:0}
 
 /* ============ Filter chips (Profile/Applications) ============ */
-.filterrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.filterrow{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 14px}
 .filterchip{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:600;font-size:13px;padding:7px 13px;border-radius:999px}
 .filterchip:hover{background:var(--paper)}
 .filterchip[aria-pressed="true"]{background:var(--ink);color:var(--orange);border-color:var(--ink)}
@@ -364,6 +369,33 @@ ul.entries.applist li.approw{gap:20px;flex-wrap:wrap;padding:14px 18px}
 .approw select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
 .approw-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
 
+/* ============ Dashboard: upcoming card, to-do add row ============ */
+.upcomingbox{background:var(--card);border:1px solid var(--paper-2);border-radius:16px;box-shadow:var(--shadow);padding:4px 18px}
+.upcomingrow{display:flex;align-items:center;gap:12px;width:100%;border:0;border-bottom:1px solid var(--paper-2);background:transparent;padding:14px 0;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.upcomingrow:last-child{border-bottom:0}
+.upcomingrow:hover{background:var(--paper)}
+.upcomingtag{flex:none;font-family:var(--font-site);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:6px}
+.upcomingtag.deadline{background:#E4F1E9;color:#22795A}
+.upcomingtag.event{background:#EDE7F6;color:#5B3FA6}
+.upcomingmain{flex:1;min-width:0;display:flex;flex-direction:column}
+.upcomingtitle{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upcomingsub{font-size:12px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upcomingwhen{flex:none;font-family:var(--font-site);font-size:12px;color:var(--ink-soft);white-space:nowrap}
+.todoaddrow{display:flex;gap:10px;align-items:end}
+.todoaddrow .field{flex:1;min-width:0}
+.todoaddrow .field input{width:100%}
+.todoaddrow .btn{flex:none}
+
+/* ============ Dashboard: inline section search, upcoming/todo split ============ */
+.sec-search{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--paper-2);border-radius:10px;padding:6px 10px;color:var(--line)}
+.sec-search input{border:0;background:transparent;font:inherit;font-size:13.5px;color:var(--ink);outline:none;width:150px}
+.dashsplit{display:flex;flex-direction:column}
+@media(min-width:900px){
+  .dashsplit{display:grid;grid-template-columns:1fr 1fr;column-gap:24px;align-items:start}
+  .dashsplit .todo-block{order:1}
+  .dashsplit .upcoming-block{order:2}
+}
+
 /* ============ Dashboard: clickable tally tiles ============ */
 .statcards.tally{grid-template-columns:repeat(2,1fr);max-width:520px}
 .tile{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow);text-align:left;width:100%}
@@ -377,6 +409,9 @@ ul.entries.applist li.approw{gap:20px;flex-wrap:wrap;padding:14px 18px}
 /* ============ Accent chip (ink+orange) — reused for interests, multi-select ============ */
 .pill.chip-accent{background:#FBEEE4;color:var(--orange-deep);font-weight:700;border:0;cursor:pointer}
 .pill.chip-accent:hover{background:#F3D9C6}
+
+/* ============ Interests chips (Settings) — bolder, higher-contrast treatment ============ */
+.pill.chip-strong{background:var(--ink);color:var(--orange);font-weight:700}
 
 /* ============ To-do (Dashboard) ============ */
 .todolist{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -417,15 +452,15 @@ li.editrow input{font-family:inherit;font-size:13.5px;padding:8px 10px;border:1p
 li.editrow select,.editrow-select{font-family:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);flex:1;min-width:120px}
 
 /* ============ Applications: sub-tabs, monogram, status dot ============ */
-.subtabs{display:flex;gap:20px;border-bottom:1px solid var(--paper-2);margin:20px 0 0}
+.subtabs{display:flex;gap:20px;border-bottom:1px solid var(--paper-2);margin:20px 0 20px}
 .subtab{border:0;background:transparent;font-weight:600;font-size:14px;color:var(--ink-soft);padding:10px 2px;border-bottom:2px solid transparent}
 .subtab.active{color:var(--orange-deep);border-color:var(--orange)}
-.monogram{width:36px;height:36px;border-radius:10px;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:13px;flex:none}
-.monogram-img{background:#fff;border:1px solid var(--paper-2);padding:5px}
+.monogram{width:40px;height:40px;border-radius:10px;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:13px;flex:none}
+.monogram-img{background:#fff;border:1px solid var(--paper-2);padding:6px;box-shadow:var(--shadow)}
 .monogram-img img{width:100%;height:100%;object-fit:contain}
 .boardrow{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0 0 16px}
-.boardlink{font-size:12.5px;font-weight:600;color:var(--orange-deep);text-decoration:none;background:#FBEEE4;padding:5px 11px;border-radius:999px}
-.boardlink:hover{background:#F3D9C6}
+.boardlink{font-size:12.5px;font-weight:700;color:var(--orange);text-decoration:none;background:var(--ink);padding:6px 13px;border-radius:999px;display:inline-flex;align-items:center;gap:4px}
+.boardlink:hover{filter:brightness(1.2)}
 .statusdot{width:9px;height:9px;border-radius:50%;flex:none}
 .statusdot.ok{background:var(--good)}
 .statusdot.mid{background:var(--orange-deep)}
@@ -466,10 +501,8 @@ li.editrow select,.editrow-select{font-family:inherit;font-size:13.5px;padding:8
 .authswitch{background:transparent;border:0;color:var(--orange-deep);font:inherit;font-size:13.5px;font-weight:600;text-decoration:underline;padding:0;margin-top:16px}
 
 /* ============ Login page (split card + illustration) ============ */
-.loginwrap{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#FBC9A0 0%,#F3986A 55%,#E5703A 100%)}
-.logincard{position:relative;width:100%;max-width:980px;min-height:560px;border-radius:28px;overflow:hidden;box-shadow:var(--shadow);display:flex;align-items:center;background:linear-gradient(160deg,#FBC9A0 0%,#F3986A 55%,#E5703A 100%)}
-.login-blob{position:absolute;border-radius:50%;filter:blur(35px);pointer-events:none}
-.login-leaf{position:absolute;background:#FFE8D1;border-radius:0 50% 50% 50%;pointer-events:none;opacity:.55}
+.loginwrap{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--paper-2)}
+.logincard{position:relative;width:100%;max-width:980px;min-height:560px;border-radius:24px;overflow:hidden;box-shadow:var(--shadow);display:flex;align-items:center;background:linear-gradient(135deg,var(--orange) 0%,var(--orange-deep) 100%)}
 .loginform{position:relative;z-index:2;width:380px;max-width:calc(100% - 48px);margin:40px 24px 40px 48px;background:rgba(255,255,255,.55);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.5);border-radius:22px;box-shadow:var(--shadow);padding:36px 32px}
 .loginform .field{margin-bottom:16px;position:relative}
 .loginform .field input{width:100%}
