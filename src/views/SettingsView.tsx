@@ -8,12 +8,14 @@ export function SettingsView({
   email,
   onSignOut,
   onReset,
+  onLoadDemo,
   student,
   onChange,
 }: {
   email: string;
   onSignOut: () => void;
   onReset: () => void;
+  onLoadDemo: () => void;
   student: Student;
   onChange: (next: Student) => void;
 }) {
@@ -68,9 +70,14 @@ export function SettingsView({
 
       <section className="sec" aria-labelledby="data-h">
         <div className="sec-head"><h2 id="data-h">Your data</h2></div>
-        <button className="btn btn-outline" onClick={onReset}>
-          Reset my data
-        </button>
+        <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
+          <button className="btn btn-outline" onClick={onLoadDemo}>
+            Load demo data
+          </button>
+          <button className="btn btn-outline" onClick={onReset}>
+            Reset my data
+          </button>
+        </div>
       </section>
 
       <div ref={liveRef} className="sr-only" aria-live="polite"></div>

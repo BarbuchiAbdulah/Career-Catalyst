@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import type { AdvisingNote, Contact, Entry, Student } from "./types";
+import { demoStudentFields } from "./demoData";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -186,6 +187,16 @@ export async function resetMe(userId: string): Promise<Student> {
     dismissed_suggestions: [],
   };
   const { data, error } = await supabase.from("students").update(blank).eq("id", userId).select().single();
+  if (error) throw error;
+  return fromRow(data as StudentRow);
+}
+
+// Fills the current user's own row with a realistic, fully-populated profile
+// (see demoData.ts) — lets the app be clicked through or demoed without
+// hand-typing a whole profile first. Overwrites this account's own data only.
+export async function loadDemoData(userId: string): Promise<Student> {
+  const demo: Student = { id: userId, role: "student", ...demoStudentFields() };
+  const { data, error } = await supabase.from("students").update(toRow(demo)).eq("id", userId).select().single();
   if (error) throw error;
   return fromRow(data as StudentRow);
 }

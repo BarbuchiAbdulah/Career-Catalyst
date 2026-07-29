@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { Student } from "./lib/types";
 import { supabase, supabaseConfigured } from "./lib/supabaseClient";
-import { fetchMe, fetchRoster, upsertMe, resetMe } from "./lib/storage";
+import { fetchMe, fetchRoster, upsertMe, resetMe, loadDemoData } from "./lib/storage";
 import { scoreFor, band, bandColor } from "./lib/scoring";
 import { DashboardTab } from "./views/DashboardTab";
 import { ProfileTab } from "./views/ProfileTab";
@@ -128,6 +128,11 @@ export default function App() {
     if (!me || !confirm("Reset your data to blank? This can't be undone.")) return;
     const blank = await resetMe(me.id);
     setMe(blank);
+  }
+  async function loadDemo() {
+    if (!me || !confirm("Load demo data? This will overwrite your current profile.")) return;
+    const demo = await loadDemoData(me.id);
+    setMe(demo);
   }
 
   if (!supabaseConfigured) {
@@ -266,7 +271,7 @@ export default function App() {
 
       <main id="main" className="content">
         {showSettings ? (
-          <SettingsView email={session.user.email ?? ""} onSignOut={signOut} onReset={reset} student={me} onChange={updateMe} />
+          <SettingsView email={session.user.email ?? ""} onSignOut={signOut} onReset={reset} onLoadDemo={loadDemo} student={me} onChange={updateMe} />
         ) : role === "student" ? (
           studentPage === "dashboard" ? (
             <DashboardTab student={me} onChange={updateMe} onNavigate={goToPage} />
