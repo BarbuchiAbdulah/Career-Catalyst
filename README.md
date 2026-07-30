@@ -16,6 +16,13 @@ the Career Center can see, growing across all four years instead of resetting ev
 | **Skills Development** | Skills are their own entity with growing **evidence** over time (not a static resume line), and each piece of evidence can optionally link back to the Experience/Project it came from. |
 | **Career Readiness** | Applications, resources, and the readiness score live in one account instead of across Handshake, a resume doc, and memory — with a staff-facing roster so the Career Center can see who's falling behind before it's too late. |
 
+## Try the deployed MVP site: [OtterPath](https://career-catalyst-du7v.vercel.app/)
+
+- **Student view**: sign up with any real-looking `@lclark.edu` email — there's no verification
+  beyond the domain check, so any address at that domain works for testing.
+- **Staff view**: sign in with `you@lclark.edu` / `you2010` — a seeded staff account, already
+  promoted to the `staff` role, so you land straight on the roster instead of a student dashboard.
+
 ## The core loop
 
 A student logs an entry (a skill, an experience, or a professional contact) → their readiness
@@ -102,13 +109,6 @@ npm run build                # production build to dist/
 
 You'll also need a Supabase project with [`supabase/schema.sql`](./supabase/schema.sql) run once
 in the SQL Editor (Project → SQL Editor → New query → paste → Run) before sign-up will work.
-
-## Try the deployed site
-
-- **Student view**: sign up with any real-looking `@lclark.edu` email — there's no verification
-  beyond the domain check, so any address at that domain works for testing.
-- **Staff view**: sign in with `you@lclark.edu` / `you2010` — a seeded staff account, already
-  promoted to the `staff` role, so you land straight on the roster instead of a student dashboard.
 
 ## Deploy
 
