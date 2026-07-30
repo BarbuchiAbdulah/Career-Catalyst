@@ -35,6 +35,7 @@ create table if not exists public.students (
 -- to an existing, already-deployed students table. Safe to re-run.
 alter table public.students add column if not exists avatar_url text not null default '';
 alter table public.students add column if not exists contacts jsonb not null default '[]';
+alter table public.students add column if not exists onboarded boolean not null default false;
 
 alter table public.students enable row level security;
 
@@ -133,6 +134,113 @@ begin
     jsonb_build_object('id', note_id, 'date', note_date, 'note', note_text)
   )
   where id = target_id;
+end;
+$$;
+
+-- --- Staff-redacted roster --------------------------------------------------
+-- Staff can already SELECT every row via students_select's RLS policy, but
+-- that policy is row-level/all-or-nothing — it can't hide individual jsonb
+-- fields within a row. These functions strip the sensitive per-item fields
+-- (skill evidence text, entry descriptions, all contact fields) before the
+-- row ever leaves Postgres, so a staff-facing fetch can never leak them,
+-- Network-tab or otherwise. Keeps enough per-item fields (id/title/dates/
+-- category/path) that scoreFor/dominantPath/toTimelineItems in scoring.ts
+-- keep working unchanged on the client — see src/lib/types.ts StaffStudent.
+
+create or replace function public.redact_skills(skills jsonb)
+returns jsonb
+language sql
+stable
+as $$
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'id', sk->>'id',
+      'title', sk->>'title',
+      'path', coalesce(sk->>'path', ''),
+      -- evidence id/date are kept (drives the level tag + timeline
+      -- placement); 'description' is the free-text field and is omitted
+      -- entirely, not just blanked, so the key isn't even present on the wire.
+      'evidence', (
+        select coalesce(jsonb_agg(
+          jsonb_build_object('id', ev->>'id', 'date', ev->>'date')
+        ), '[]'::jsonb)
+        from jsonb_array_elements(coalesce(sk->'evidence', '[]'::jsonb)) ev
+      )
+    )
+  ), '[]'::jsonb)
+  from jsonb_array_elements(coalesce(skills, '[]'::jsonb)) sk;
+$$;
+
+create or replace function public.redact_entries(entries jsonb)
+returns jsonb
+language sql
+stable
+as $$
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'id', e->>'id',
+      'title', e->>'title',
+      'category', e->'category',
+      'startDate', coalesce(e->>'startDate', e->>'date'), -- legacy rows used 'date'; see migrateEntries in storage.ts
+      'endDate', e->'endDate',
+      'ongoing', coalesce((e->>'ongoing')::boolean, false),
+      'path', coalesce(e->>'path', '')
+      -- 'meta' (free text), 'organization', 'location', 'tools',
+      -- 'hoursLogged', 'link' are all omitted on purpose — decision: staff
+      -- see title + dates + category only, never descriptive fields.
+    )
+  ), '[]'::jsonb)
+  from jsonb_array_elements(coalesce(entries, '[]'::jsonb)) e
+  -- legacy pre-migration rows could still hold folded-in "type":"skill"/
+  -- "contact" items (see migrateEntries' comment in storage.ts) — drop them
+  -- here too rather than mis-surfacing them to staff as experiences.
+  -- Self-heals once that student's own client next saves, same window
+  -- migrateEntries already documents.
+  where coalesce(e->>'type', '') not in ('skill', 'contact');
+$$;
+
+-- Single staff-facing roster fetch. Returns every students row (same set
+-- fetchRoster()'s plain select("*") returned before this change) with
+-- skills/entries redacted and contacts collapsed to a bare count.
+-- security definer + the is_staff() guard mirrors set_student_flag/
+-- add_advising_note above — a genuine second gate, not just reliance on the
+-- students_select RLS policy already allowing staff the row.
+create or replace function public.staff_roster()
+returns table (
+  id uuid,
+  role text,
+  name text,
+  grad text,
+  majors jsonb,
+  minors jsonb,
+  interests jsonb,
+  headline text,
+  avatar_url text,
+  flagged boolean,
+  skills jsonb,
+  entries jsonb,
+  contacts_count integer,
+  advising_notes jsonb
+)
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+begin
+  if not public.is_staff(auth.uid()) then
+    raise exception 'Only staff can view the roster';
+  end if;
+  return query
+  select
+    s.id, s.role, s.name, s.grad, s.majors, s.minors, s.interests, s.headline,
+    s.avatar_url, s.flagged,
+    public.redact_skills(s.skills),
+    public.redact_entries(s.entries),
+    jsonb_array_length(coalesce(s.contacts, '[]'::jsonb)),
+    s.advising_notes
+  from public.students s
+  order by s.name;
 end;
 $$;
 

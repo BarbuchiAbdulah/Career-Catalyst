@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import type { Student } from "./lib/types";
+import type { Student, StaffStudent } from "./lib/types";
 import { supabase, supabaseConfigured } from "./lib/supabaseClient";
-import { fetchMe, fetchRoster, upsertMe, resetMe, loadDemoData } from "./lib/storage";
+import { fetchMe, fetchStaffRoster, upsertMe, resetMe, loadDemoData, setOnboarded } from "./lib/storage";
 import { scoreFor, band, bandColor } from "./lib/scoring";
 import { DashboardTab } from "./views/DashboardTab";
 import { ExperiencesTab } from "./views/ExperiencesTab";
@@ -13,6 +13,7 @@ import { StaffView } from "./views/StaffView";
 import { InsightsTab } from "./views/InsightsTab";
 import { SettingsView } from "./views/SettingsView";
 import { LoginView } from "./views/LoginView";
+import { WelcomeModal } from "./components/WelcomeModal";
 
 // Inline SVG icons (no icon dependency). 20px, stroke-based.
 const I = {
@@ -54,8 +55,9 @@ export default function App() {
   // undefined = still checking for an existing session; null = signed out.
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [me, setMe] = useState<Student | null>(null);
-  const [roster, setRoster] = useState<Student[]>([]);
+  const [roster, setRoster] = useState<StaffStudent[]>([]);
   const [loadError, setLoadError] = useState("");
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const [studentPage, setStudentPage] = useState<StudentPage>("dashboard");
   const [staffPage, setStaffPage] = useState<StaffPage>("roster");
@@ -74,6 +76,7 @@ export default function App() {
     if (!supabaseConfigured || !session) {
       setMe(null);
       setRoster([]);
+      setShowWelcome(false);
       return;
     }
     let cancelled = false;
@@ -82,8 +85,9 @@ export default function App() {
         const mine = await fetchMe(session.user.id);
         if (cancelled) return;
         setMe(mine);
+        setShowWelcome(!!mine && !mine.onboarded);
         if (mine?.role === "staff") {
-          const all = await fetchRoster();
+          const all = await fetchStaffRoster();
           if (!cancelled) setRoster(all);
         }
       } catch (err) {
@@ -131,6 +135,13 @@ export default function App() {
     const demo = await loadDemoData(me.id);
     setMe(demo);
   }
+  function dismissWelcome() {
+    setShowWelcome(false);
+    if (me) {
+      setMe({ ...me, onboarded: true }); // optimistic — no debounce race with upsertMe
+      setOnboarded(me.id).catch((err) => console.error("Failed to persist onboarding flag:", err));
+    }
+  }
 
   if (!supabaseConfigured) {
     return (
@@ -175,6 +186,7 @@ export default function App() {
   const meBand = band(meScore);
 
   return (
+    <>
     <div className="app">
       <aside className="sidebar">
         <div className="side-brand">
@@ -287,5 +299,7 @@ export default function App() {
         )}
       </main>
     </div>
+    {showWelcome && me && <WelcomeModal role={me.role} onDismiss={dismissWelcome} />}
+    </>
   );
 }

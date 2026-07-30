@@ -91,6 +91,7 @@ h3 .pathchip{margin-left:10px}
 .del{border:0;background:transparent;color:var(--ink-soft);font-size:13px;font-weight:600;padding:7px 12px;border-radius:8px}
 .del:hover{color:var(--warn);background:#F7E4DC}
 .empty{border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--ink-soft);background:transparent}
+.entries-summary{margin:14px 0 0;padding:14px 16px;background:var(--card);border:1px solid var(--paper-2);border-radius:12px;color:var(--ink-soft);font-size:14px}
 
 table.roster{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
 table.roster caption{text-align:left;padding:0 0 12px;color:var(--ink-soft);font-size:13px;caption-side:top}
@@ -520,3 +521,14 @@ li.editrow select,.editrow-select{font-family:inherit;font-size:13.5px;padding:8
   .login-art{display:none}
   .loginform{margin:32px;width:100%;max-width:380px}
 }
+
+/* ============ Welcome modal (one-time first-login tutorial) ============ */
+dialog.welcome-modal{position:relative;width:100%;max-width:420px;border:0;border-radius:20px;padding:36px 32px 28px;background:var(--card);box-shadow:var(--shadow);color:var(--ink)}
+dialog.welcome-modal::backdrop{background:rgba(35,31,32,.55)}
+dialog.welcome-modal h2{font-family:var(--font-site);font-weight:600;font-size:22px;margin:6px 0 10px;letter-spacing:-.01em}
+.welcome-skip{position:absolute;top:16px;right:16px;border:0;background:transparent;color:var(--ink-soft);font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px}
+.welcome-skip:hover{background:var(--paper-2);color:var(--ink)}
+.welcome-dots{display:flex;gap:6px;margin:22px 0 20px}
+.welcome-dot{width:7px;height:7px;border-radius:999px;background:var(--paper-2)}
+.welcome-dot.active{background:var(--orange)}
+.welcome-nav{display:flex;justify-content:flex-end;gap:10px}

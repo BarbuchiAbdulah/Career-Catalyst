@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Student, Stage, ScoreCategory } from "../lib/types";
+import type { StaffStudent, Stage, ScoreCategory } from "../lib/types";
 import { CATS, ORDER, PATHS, STAGE_LABEL, band, bandColor, dominantPath, lastActivityFor, scoreFor } from "../lib/scoring";
 
 const STAGES: Stage[] = ["first-year", "sophomore", "junior", "senior"];
@@ -12,13 +12,13 @@ function daysSince(iso: string): number | null {
   return Math.round((Date.now() - new Date(iso + "T00:00:00").getTime()) / DAY);
 }
 
-export function InsightsTab({ students }: { students: Student[] }) {
+export function InsightsTab({ students }: { students: StaffStudent[] }) {
   const rows = useMemo(
     () =>
       students.map((s) => ({
         student: s,
-        ...scoreFor(s.skills, s.entries, s.contacts, s.grad),
-        dom: dominantPath(s.skills, s.entries, s.contacts),
+        ...scoreFor(s.skills, s.entries, { length: s.contactsCount }, s.grad),
+        dom: dominantPath(s.skills, s.entries),
         activityDays: daysSince(lastActivityFor(s.skills, s.entries)),
       })),
     [students]

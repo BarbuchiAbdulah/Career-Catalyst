@@ -155,6 +155,58 @@ export interface Student {
   advisingNotes: AdvisingNote[];
   todos: Todo[];
   dismissedSuggestions: string[]; // keys of computed dashboard suggestions the student closed
+  onboarded: boolean; // has this account dismissed the first-login WelcomeModal
+}
+
+// --- Staff-redacted roster/detail view ---------------------------------------
+// Postgres (redact_skills/redact_entries/staff_roster() in supabase/schema.sql)
+// strips free-text/PII fields before these ever reach the client. These types
+// encode that redaction at compile time: StaffEntryView has no .meta,
+// StaffSkillEvidenceView has no .description, and StaffStudent has no
+// .contacts array at all — referencing a stripped field is a type error, not
+// a silent blank render. scoring.ts's scoreFor/dominantPath/toTimelineItems
+// accept these directly (their param types only need what's below), so
+// staff's score/stage/dominant-path/timeline are computed by the exact same
+// functions as a student's own — see CLAUDE.md's "never stored, single
+// source of truth" rule.
+
+export interface StaffSkillEvidenceView {
+  id: string;
+  date: string; // no description — see redact_skills()
+}
+
+export interface StaffSkillView {
+  id: string;
+  title: string;
+  path: CareerPath;
+  evidence: StaffSkillEvidenceView[];
+}
+
+export interface StaffEntryView {
+  id: string;
+  title: string;
+  category?: ExperienceCategory;
+  startDate: string;
+  endDate?: string;
+  ongoing: boolean;
+  path: CareerPath; // no meta/organization/location/tools/hoursLogged/link — see redact_entries()
+}
+
+export interface StaffStudent {
+  id: string;
+  role: Role;
+  name: string;
+  grad: string;
+  majors: string[];
+  minors: string[];
+  interests: string[];
+  headline: string;
+  avatarUrl: string;
+  flagged: boolean;
+  skills: StaffSkillView[];
+  entries: StaffEntryView[];
+  contactsCount: number; // NOT an array — see staff_roster(), contacts are count-only
+  advisingNotes: AdvisingNote[]; // staff-authored, unaffected by redaction
 }
 
 // Derived, never stored.

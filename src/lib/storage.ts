@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import type { AdvisingNote, Contact, Entry, Student } from "./types";
+import type { AdvisingNote, Contact, Entry, Student, StaffStudent } from "./types";
 import { demoStudentFields } from "./demoData";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -27,6 +27,28 @@ interface StudentRow {
   advising_notes: Student["advisingNotes"];
   todos: Student["todos"];
   dismissed_suggestions: string[];
+  onboarded: boolean;
+}
+
+// Row shape returned by the staff_roster() RPC (see supabase/schema.sql) —
+// already redacted server-side, so this is intentionally narrower than
+// StudentRow: no full contacts array, and skills/entries only carry the
+// fields redact_skills()/redact_entries() keep.
+interface StaffRosterRow {
+  id: string;
+  role: StaffStudent["role"];
+  name: string;
+  grad: string;
+  majors: string[];
+  minors: string[];
+  interests: string[];
+  headline: string;
+  avatar_url: string;
+  flagged: boolean;
+  skills: StaffStudent["skills"];
+  entries: StaffStudent["entries"];
+  contacts_count: number;
+  advising_notes: StaffStudent["advisingNotes"];
 }
 
 // `entries` shape changed twice across earlier rounds (skill|experience|contact
@@ -99,6 +121,26 @@ function fromRow(row: StudentRow): Student {
     advisingNotes: row.advising_notes,
     todos: row.todos,
     dismissedSuggestions: row.dismissed_suggestions,
+    onboarded: row.onboarded,
+  };
+}
+
+function fromStaffRow(row: StaffRosterRow): StaffStudent {
+  return {
+    id: row.id,
+    role: row.role,
+    name: row.name,
+    grad: row.grad,
+    majors: row.majors,
+    minors: row.minors,
+    interests: row.interests,
+    headline: row.headline,
+    avatarUrl: row.avatar_url,
+    flagged: row.flagged,
+    skills: row.skills,
+    entries: row.entries,
+    contactsCount: row.contacts_count,
+    advisingNotes: row.advising_notes,
   };
 }
 
@@ -124,6 +166,7 @@ function toRow(s: Student) {
     advising_notes: s.advisingNotes,
     todos: s.todos,
     dismissed_suggestions: s.dismissedSuggestions,
+    onboarded: s.onboarded,
   };
 }
 
@@ -135,13 +178,23 @@ export async function fetchMe(userId: string): Promise<Student | null> {
   return data ? fromRow(data as StudentRow) : null;
 }
 
-// Every student row — only actually returns more than one's own row when the
-// caller is staff (enforced by the students_select RLS policy, not by this
-// function).
-export async function fetchRoster(): Promise<Student[]> {
-  const { data, error } = await supabase.from("students").select("*").order("name");
+// Redacted roster — goes through the staff_roster() RPC (security definer),
+// never a plain select("*"), so raw contact/entry/skill-evidence text never
+// leaves Postgres for anyone but the row's own owner. Only actually returns
+// more than one row when the caller is staff (staff_roster() raises if not).
+export async function fetchStaffRoster(): Promise<StaffStudent[]> {
+  const { data, error } = await supabase.rpc("staff_roster");
   if (error) throw error;
-  return (data as StudentRow[]).map(fromRow);
+  return (data as StaffRosterRow[]).map(fromStaffRow);
+}
+
+// Marks the signed-in user's own onboarding flag so the first-login welcome
+// modal doesn't reappear. Direct self-row update via students_update_self
+// RLS — unlike setFlag/addAdvisingNote this never touches another row, so no
+// RPC is needed.
+export async function setOnboarded(userId: string): Promise<void> {
+  const { error } = await supabase.from("students").update({ onboarded: true }).eq("id", userId);
+  if (error) throw error;
 }
 
 export async function upsertMe(next: Student): Promise<void> {
@@ -200,7 +253,10 @@ export async function resetMe(userId: string): Promise<Student> {
 // (see demoData.ts) — lets the app be clicked through or demoed without
 // hand-typing a whole profile first. Overwrites this account's own data only.
 export async function loadDemoData(userId: string): Promise<Student> {
-  const demo: Student = { id: userId, role: "student", ...demoStudentFields() };
+  // onboarded: true — the welcome modal is a blocking dialog shown right
+  // after login, so an account can only ever reach this Settings action
+  // after already dismissing it.
+  const demo: Student = { id: userId, role: "student", onboarded: true, ...demoStudentFields() };
   const { data, error } = await supabase.from("students").update(toRow(demo)).eq("id", userId).select().single();
   if (error) throw error;
   return fromRow(data as StudentRow);

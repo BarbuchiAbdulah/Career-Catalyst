@@ -204,3 +204,44 @@ export const CAREER_SERVICES: CareerService[] = [
   { id: "cs2", title: "Mock Interview", description: "Practice a real interview format for your target field.", cta: "Book a mock interview" },
   { id: "cs3", title: "Career Exploration Session", description: "Not sure what direction fits? Start here.", cta: "Book a session" },
 ];
+
+// Copy for the one-time WelcomeModal (see src/components/WelcomeModal.tsx),
+// shown on first login only and never again once dismissed (Student.onboarded).
+export interface OnboardingSlide {
+  title: string;
+  body: string;
+}
+
+export const STUDENT_ONBOARDING_SLIDES: OnboardingSlide[] = [
+  {
+    title: "Welcome to Career Catalyst",
+    body: "This is your own space that grows across all four years — not a library of resources to dig through, but a record of what you've actually built.",
+  },
+  {
+    title: "Log skills, experiences, and projects",
+    body: "The Experiences tab is where it all starts: skills you can name, jobs and internships and research, and any projects you've shipped.",
+  },
+  {
+    title: "Build your network",
+    body: "The Network tab tracks real professional connections you make, and lets you explore L&C alumni in fields you're curious about.",
+  },
+  {
+    title: "Watch your readiness grow",
+    body: "Your Dashboard shows a readiness score that adjusts to your class year, so it's fair whether you're a first-year or a senior. Track opportunities in Applications, and find templates and events in Resources.",
+  },
+];
+
+export const STAFF_ONBOARDING_SLIDES: OnboardingSlide[] = [
+  {
+    title: "Welcome, Career Center staff",
+    body: "The Student roster is sorted by readiness score, so students who could use outreach surface first — search by name or major, or sort any column.",
+  },
+  {
+    title: "Drill into a student",
+    body: "Click a row to see a student's readiness breakdown, stage-aware gaps, and four-year timeline, flag them for outreach, or leave an advising note. Some detail (like full contact names and notes) stays private to the student — you'll see counts instead.",
+  },
+  {
+    title: "Spot cohort-wide patterns",
+    body: "Insights rolls the whole roster up into aggregates — readiness distribution, weakest category cohort-wide, career-path direction, and engagement — to point at where a workshop or event would help the most students at once.",
+  },
+];

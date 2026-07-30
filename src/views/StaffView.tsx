@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import type { AdvisingNote, Student } from "../lib/types";
-import { CATS, ORDER, RELATIONSHIP_LABEL, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, lastActivityFor, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
+import type { AdvisingNote, StaffStudent } from "../lib/types";
+import { CATS, EXPERIENCE_CATEGORY_LABEL, ORDER, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, lastActivityFor, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
 import { addAdvisingNote, setFlag } from "../lib/storage";
 import { uid } from "../lib/seed";
 import { Dial, CatBars, StageBar } from "../components/Readiness";
@@ -12,6 +12,18 @@ type Dir = "asc" | "desc";
 const today = () => new Date().toISOString().slice(0, 10);
 function fmtNoteDate(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+function fmtEntryDate(iso: string): string {
+  if (!iso) return "";
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+// Same shape/idiom as ExperiencesTab.tsx's dateRange() — duplicated locally
+// since it's a small, file-scoped formatting helper there too.
+function dateRange(e: { startDate: string; endDate?: string; ongoing: boolean }): string {
+  const start = fmtEntryDate(e.startDate);
+  if (e.ongoing) return `${start} – Present`;
+  if (e.endDate) return `${start} – ${fmtEntryDate(e.endDate)}`;
+  return start;
 }
 
 const DAY = 86400000;
@@ -49,8 +61,8 @@ export function StaffView({
   drill,
   setDrill,
 }: {
-  students: Student[];
-  setStudents: React.Dispatch<React.SetStateAction<Student[]>>;
+  students: StaffStudent[];
+  setStudents: React.Dispatch<React.SetStateAction<StaffStudent[]>>;
   drill: string | null;
   setDrill: (id: string | null) => void;
 }) {
@@ -62,7 +74,7 @@ export function StaffView({
   const rows = useMemo(() => {
     const withScore = students.map((s) => ({
       ...s,
-      ...scoreFor(s.skills, s.entries, s.contacts, s.grad),
+      ...scoreFor(s.skills, s.entries, { length: s.contactsCount }, s.grad),
       activity: lastActivityFor(s.skills, s.entries),
     }));
     const cmp: Record<SortKey, (a: (typeof withScore)[0], b: (typeof withScore)[0]) => number> = {
@@ -264,13 +276,13 @@ function StaffDrill({
   onFlag,
   onAddNote,
 }: {
-  student: Student;
+  student: StaffStudent;
   onBack: () => void;
   onFlag: (ev: React.MouseEvent) => void;
   onAddNote: (text: string) => void;
 }) {
-  const { score, per, stage } = scoreFor(student.skills, student.entries, student.contacts, student.grad);
-  const dom = dominantPath(student.skills, student.entries, student.contacts);
+  const { score, per, stage } = scoreFor(student.skills, student.entries, { length: student.contactsCount }, student.grad);
+  const dom = dominantPath(student.skills, student.entries);
   const b = band(score);
   const gaps = ORDER.map((k) => ({ k, need: per[k].target - per[k].n })).filter((g) => g.need > 0);
   const timelineItems = toTimelineItems(student.skills, student.entries);
@@ -333,7 +345,7 @@ function StaffDrill({
 
       <div className="drill-grid">
         {ORDER.map((k) => {
-          const count = k === "skill" ? student.skills.length : k === "experience" ? student.entries.length : student.contacts.length;
+          const count = k === "skill" ? student.skills.length : k === "experience" ? student.entries.length : student.contactsCount;
           return (
             <section key={k} aria-labelledby={"d-" + k}>
               <div className="sec-head">
@@ -362,26 +374,19 @@ function StaffDrill({
                 <ul className="entries">
                   {student.entries.map((e) => (
                     <li key={e.id}>
-                      <span className="tag experience">{CATS.experience.label}</span>
+                      <span className="tag experience">{e.category ? EXPERIENCE_CATEGORY_LABEL[e.category] : CATS.experience.label}</span>
                       <span className="entry-main">
                         <span className="t">{e.title}</span>
-                        {e.meta && <span className="m">{e.meta}</span>}
+                        <span className="m">{dateRange(e)}</span>
                       </span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <ul className="entries">
-                  {student.contacts.map((c) => (
-                    <li key={c.id}>
-                      <span className="tag contact">{RELATIONSHIP_LABEL[c.relationship]}</span>
-                      <span className="entry-main">
-                        <span className="t">{c.name}</span>
-                        {c.note && <span className="m">{c.note}</span>}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <p className="entries-summary">
+                  {student.contactsCount} connection{student.contactsCount === 1 ? "" : "s"} logged. Names,
+                  relationships, and notes are private to the student.
+                </p>
               )}
             </section>
           );

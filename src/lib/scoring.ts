@@ -1,4 +1,4 @@
-import type { Contact, Entry, ExperienceCategory, Skill, ScoreCategory, Readiness, Band, BandKey, Stage, CareerPath, ContactRelationship, SkillLevel, TimelineItem } from "./types";
+import type { ExperienceCategory, ScoreCategory, Readiness, Band, BandKey, Stage, CareerPath, ContactRelationship, SkillLevel, TimelineItem } from "./types";
 
 // Category metadata, grounded in NACE career-readiness areas.
 // `base` is the SENIOR-year target; earlier stages scale down (see STAGE_FACTOR).
@@ -126,7 +126,12 @@ export function targetFor(cat: ScoreCategory, stage: Stage): number {
 
 // --- Score -----------------------------------------------------------------
 
-export function scoreFor(skills: Skill[], entries: Entry[], contacts: Contact[], grad: string): Readiness {
+export function scoreFor(
+  skills: { length: number },
+  entries: { length: number },
+  contacts: { length: number },
+  grad: string
+): Readiness {
   const stage = stageFor(grad);
   const counts: Record<ScoreCategory, number> = {
     skill: skills.length,
@@ -174,23 +179,47 @@ export function bandColor(k: BandKey): string {
   return k === "ok" ? "var(--good)" : k === "mid" ? "var(--orange)" : "var(--warn)";
 }
 
+interface TimelineSkillLike {
+  title: string;
+  path: CareerPath;
+  evidence: { id: string; date: string; description?: string }[];
+}
+interface TimelineEntryLike {
+  id: string;
+  title: string;
+  meta?: string;
+  startDate: string;
+  path: CareerPath;
+}
+
 // Flattens skills (one row per evidence entry) + experience entries into the
 // common shape <Timeline> renders. Contacts are deliberately NOT included —
 // a connection isn't a "growth moment" the way a skill or experience is, and
 // it would just duplicate Profile's Connections list; see DashboardTab's
 // separate "Recent connections" card instead. An ongoing/ranged experience is
 // anchored to its start term rather than duplicated across every term it spans.
-export function toTimelineItems(skills: Skill[], entries: Entry[]): TimelineItem[] {
+// Widened to structural types (not concrete Skill[]/Entry[]) so this also
+// accepts staff's redacted StaffSkillView[]/StaffEntryView[] — description/
+// meta are optional on those, so they fall back to "", which is also the
+// correct staff behavior: no free text, same as scoreFor/dominantPath below.
+export function toTimelineItems(skills: TimelineSkillLike[], entries: TimelineEntryLike[]): TimelineItem[] {
   const fromSkills: TimelineItem[] = skills.flatMap((s) =>
-    s.evidence.map((ev) => ({ id: ev.id, type: "skill" as const, title: s.title, meta: ev.description, date: ev.date, path: s.path }))
+    s.evidence.map((ev) => ({ id: ev.id, type: "skill" as const, title: s.title, meta: ev.description ?? "", date: ev.date, path: s.path }))
   );
-  const fromEntries: TimelineItem[] = entries.map((e) => ({ id: e.id, type: "experience" as const, title: e.title, meta: e.meta, date: e.startDate, path: e.path }));
+  const fromEntries: TimelineItem[] = entries.map((e) => ({ id: e.id, type: "experience" as const, title: e.title, meta: e.meta ?? "", date: e.startDate, path: e.path }));
   return [...fromSkills, ...fromEntries];
 }
 
 // Dominant career path across a student's tagged skills + entries + contacts,
 // or null if none. Shows whether their work coheres toward a direction.
-export function dominantPath(skills: Skill[], entries: Entry[], contacts: Contact[]): { key: CareerPath; n: number } | null {
+// `contacts` is optional: staff's redacted view carries no per-item contact
+// path at all (contacts are count-only for staff), so a staff caller omits
+// it and dominant path is computed from skills+entries only.
+export function dominantPath(
+  skills: { path: CareerPath }[],
+  entries: { path: CareerPath }[],
+  contacts?: { path: CareerPath }[]
+): { key: CareerPath; n: number } | null {
   const counts = new Map<CareerPath, number>();
   for (const s of skills) {
     if (s.path) counts.set(s.path, (counts.get(s.path) ?? 0) + 1);
@@ -198,7 +227,7 @@ export function dominantPath(skills: Skill[], entries: Entry[], contacts: Contac
   for (const e of entries) {
     if (e.path) counts.set(e.path, (counts.get(e.path) ?? 0) + 1);
   }
-  for (const c of contacts) {
+  for (const c of contacts ?? []) {
     if (c.path) counts.set(c.path, (counts.get(c.path) ?? 0) + 1);
   }
   let best: { key: CareerPath; n: number } | null = null;
@@ -211,7 +240,7 @@ export function dominantPath(skills: Skill[], entries: Entry[], contacts: Contac
 // Most recent activity date across a student's skill evidence + entries, or ""
 // if nothing has been logged yet. Derived, never stored, so it can't drift out
 // of sync with the timeline — same rule as score/level/dominant path.
-export function lastActivityFor(skills: Skill[], entries: Entry[]): string {
+export function lastActivityFor(skills: TimelineSkillLike[], entries: TimelineEntryLike[]): string {
   const dates = toTimelineItems(skills, entries).map((i) => i.date);
   return dates.length ? dates.reduce((max, d) => (d > max ? d : max)) : "";
 }

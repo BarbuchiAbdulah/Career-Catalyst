@@ -101,5 +101,17 @@ career-readiness competencies that college career centers actually use.
 
 See [`CLAUDE.md`](./CLAUDE.md) for architecture decisions, scope guardrails, and the file map.
 
+## Future plans
+
+Scoped out for now, to keep the build focused ahead of the deadline:
+
+- **Resume upload.** There's no backend to host a binary file, so `resumeUrl` stays a link field
+  (paste a link to a PDF or Google Doc) rather than an actual upload.
+- **Resume / LinkedIn generator UI.** The generation logic already exists —
+  [`src/lib/generate.ts`](./src/lib/generate.ts)'s `resumeBullets()` and `linkedinBlurb()` build a
+  plain-text resume and an "About" blurb purely from a student's already-logged data — but neither
+  is called from any page yet. The remaining work is a UI (most likely a Settings or Resources
+  section) that calls these and lets a student view/copy the result, not new generation logic.
+
 > Demo data only. No real student information.
 

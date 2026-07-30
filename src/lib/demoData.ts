@@ -5,7 +5,7 @@
 import type { Student } from "./types";
 import { uid } from "./seed";
 
-export function demoStudentFields(): Omit<Student, "id" | "role"> {
+export function demoStudentFields(): Omit<Student, "id" | "role" | "onboarded"> {
   return {
     name: "Jordan Reyes",
     grad: "2027",
