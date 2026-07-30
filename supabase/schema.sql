@@ -10,6 +10,7 @@ create table if not exists public.students (
   id                     uuid primary key references auth.users (id) on delete cascade,
   role                   text not null default 'student' check (role in ('student', 'staff')),
   name                   text not null default '',
+  title                  text not null default '', -- staff only: position/job title
   grad                   text not null default '',
   majors                 jsonb not null default '[]',
   minors                 jsonb not null default '[]',
@@ -36,6 +37,18 @@ create table if not exists public.students (
 alter table public.students add column if not exists avatar_url text not null default '';
 alter table public.students add column if not exists contacts jsonb not null default '[]';
 alter table public.students add column if not exists onboarded boolean not null default false;
+alter table public.students add column if not exists title text not null default '';
+
+-- Replaces the old plain `flagged` boolean with an actual outreach workflow
+-- state. The old column is left in place (untouched, no data loss) but the
+-- app no longer reads/writes it — this backfill promotes anyone already
+-- flagged into "reached-out" once, the first time this runs; re-running is a
+-- no-op for anyone whose status has since been changed by staff.
+alter table public.students add column if not exists outreach_status text not null default 'not-contacted';
+update public.students set outreach_status = 'reached-out' where flagged = true and outreach_status = 'not-contacted';
+alter table public.students drop constraint if exists students_outreach_status_check;
+alter table public.students add constraint students_outreach_status_check
+  check (outreach_status in ('not-contacted', 'reached-out', 'responded', 'scheduled'));
 
 alter table public.students enable row level security;
 
@@ -98,9 +111,10 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Lets staff toggle another student's outreach flag without a blanket UPDATE
--- grant on the whole table (RLS above only allows self-updates).
-create or replace function public.set_student_flag(target_id uuid, is_flagged boolean)
+-- Lets staff move another student along the outreach workflow without a
+-- blanket UPDATE grant on the whole table (RLS above only allows self-updates).
+-- Replaces the old set_student_flag boolean toggle with an actual status.
+create or replace function public.set_outreach_status(target_id uuid, status text)
 returns void
 language plpgsql
 security definer
@@ -108,18 +122,23 @@ set search_path = public
 as $$
 begin
   if not public.is_staff(auth.uid()) then
-    raise exception 'Only staff can flag students for outreach';
+    raise exception 'Only staff can update outreach status';
   end if;
-  update public.students set flagged = is_flagged where id = target_id;
+  if status not in ('not-contacted', 'reached-out', 'responded', 'scheduled') then
+    raise exception 'Invalid outreach status: %', status;
+  end if;
+  update public.students set outreach_status = status where id = target_id;
 end;
 $$;
 
 -- Lets staff append an advising/guidance note to a student's row, mirroring
--- set_student_flag: security definer, no blanket UPDATE grant on other rows.
--- id/date are generated client-side (same as every other logged entity) and
--- passed as plain text, so this doesn't depend on gen_random_uuid()/pgcrypto
--- being enabled on the target project.
-create or replace function public.add_advising_note(target_id uuid, note_id text, note_date text, note_text text)
+-- set_outreach_status: security definer, no blanket UPDATE grant on other
+-- rows. id/date are generated client-side (same as every other logged entity)
+-- and passed as plain text, so this doesn't depend on gen_random_uuid()/
+-- pgcrypto being enabled on the target project. author_name is the writing
+-- staff member's own name+title, captured at write time so it survives even
+-- if their profile changes later.
+create or replace function public.add_advising_note(target_id uuid, note_id text, note_date text, note_text text, author_name text default '')
 returns void
 language plpgsql
 security definer
@@ -131,7 +150,7 @@ begin
   end if;
   update public.students
   set advising_notes = advising_notes || jsonb_build_array(
-    jsonb_build_object('id', note_id, 'date', note_date, 'note', note_text)
+    jsonb_build_object('id', note_id, 'date', note_date, 'note', note_text, 'author', author_name)
   )
   where id = target_id;
 end;
@@ -202,7 +221,7 @@ $$;
 -- Single staff-facing roster fetch. Returns every students row (same set
 -- fetchRoster()'s plain select("*") returned before this change) with
 -- skills/entries redacted and contacts collapsed to a bare count.
--- security definer + the is_staff() guard mirrors set_student_flag/
+-- security definer + the is_staff() guard mirrors set_outreach_status/
 -- add_advising_note above — a genuine second gate, not just reliance on the
 -- students_select RLS policy already allowing staff the row.
 create or replace function public.staff_roster()
@@ -216,7 +235,7 @@ returns table (
   interests jsonb,
   headline text,
   avatar_url text,
-  flagged boolean,
+  outreach_status text,
   skills jsonb,
   entries jsonb,
   contacts_count integer,
@@ -234,12 +253,13 @@ begin
   return query
   select
     s.id, s.role, s.name, s.grad, s.majors, s.minors, s.interests, s.headline,
-    s.avatar_url, s.flagged,
+    s.avatar_url, s.outreach_status,
     public.redact_skills(s.skills),
     public.redact_entries(s.entries),
     jsonb_array_length(coalesce(s.contacts, '[]'::jsonb)),
     s.advising_notes
   from public.students s
+  where s.role = 'student' -- staff accounts (including the caller's own row) never belong in this roster
   order by s.name;
 end;
 $$;

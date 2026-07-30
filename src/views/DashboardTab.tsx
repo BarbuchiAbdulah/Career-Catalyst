@@ -17,6 +17,7 @@ import { Timeline } from "../components/Timeline";
 import { uid } from "../lib/seed";
 import { EVENTS } from "../lib/content";
 import type { StudentPage } from "../App";
+import type { SubTab as ExperiencesSubTab } from "./ExperiencesTab";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -34,6 +35,25 @@ function daysUntil(iso: string): number | null {
 
 function fmtShort(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Small pictorial icons for the dashboard stat cards — same paths as the
+// sidebar nav icons where they overlap (experience/network/applications),
+// so the same concept reads as the same glyph in both places.
+type StatIconKind = "skill" | "experience" | "contact" | "applications" | "events";
+function StatIcon({ kind }: { kind: StatIconKind }) {
+  const d: Record<StatIconKind, string> = {
+    skill: "M12 2l2.4 7.2H22l-6 4.4 2.3 7.1L12 16.3 5.7 20.7 8 13.6l-6-4.4h7.6z",
+    experience: "M3 7h18v13H3zM8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18",
+    contact: "M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM19 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 8v3m-4.5 5.5L11 13m5.5 3.5L13 13",
+    applications: "M9 3h6a1 1 0 0 1 1 1v1h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2V4a1 1 0 0 1 1-1zM9 3v3h6V3M9 12h6M9 16h6",
+    events: "M8 2v3M16 2v3M3 9h18M3 5h18v16H3z",
+  };
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d[kind]} />
+    </svg>
+  );
 }
 
 // The signature element: readiness ring wrapping the student's avatar.
@@ -70,7 +90,7 @@ export function DashboardTab({
 }: {
   student: Student;
   onChange: (next: Student) => void;
-  onNavigate: (page: StudentPage) => void;
+  onNavigate: (page: StudentPage, experiencesSubTab?: ExperiencesSubTab) => void;
 }) {
   const [q, setQ] = useState("");
   const [todoText, setTodoText] = useState("");
@@ -217,40 +237,46 @@ export function DashboardTab({
         </section>
       )}
 
-      {/* Three category stat cards, styled like the reference's "watched" cards */}
-      <div className="statcards">
+      {/* Unified stat grid — one card language for all five metrics, each a
+          clickable shortcut to where you'd go to act on it. */}
+      <div className="statgrid">
         {ORDER.map((k) => {
           const p = per[k];
           return (
-            <div className="statcard" key={k}>
-              <span className={"statcard-ic " + k} aria-hidden="true">{CATS[k].label.charAt(0)}</span>
-              <div className="statcard-body">
-                <span className="statcard-count">{p.n}/{p.target} logged</span>
-                <span className="statcard-label">{CATS[k].label}</span>
-                <div className="track"><i style={{ width: p.pct + "%" }} /></div>
+            <button
+              key={k}
+              className="statcard2"
+              onClick={() => {
+                if (k === "skill") onNavigate("experiences", "skills");
+                else if (k === "experience") onNavigate("experiences", "experiences");
+                else onNavigate("network");
+              }}
+            >
+              <div className="statcard2-top">
+                <span className={"statcard-ic " + k}><StatIcon kind={k} /></span>
+                <span className="statcard2-arrow" aria-hidden="true">→</span>
               </div>
-            </div>
+              <span className="statcard2-label">{CATS[k].label}</span>
+              <span className="statcard2-value">{p.frac >= 1 ? `${p.n} · goal met` : `${p.n} of ${p.target}`}</span>
+              <div className="track"><i style={{ width: p.pct + "%" }} /></div>
+            </button>
           );
         })}
-      </div>
-
-      {/* Quick tallies — now clickable, jumping straight to the tab they summarize. */}
-      <div className="statcards tally">
-        <button className="tile" onClick={() => onNavigate("applications")}>
-          <span className="tile-ic" aria-hidden="true">A</span>
-          <span className="tile-body">
-            <span className="tile-count">{student.applications.length}</span>
-            <span className="tile-label">Jobs/internships tracked</span>
-          </span>
-          <span className="tile-arrow" aria-hidden="true">→</span>
+        <button className="statcard2" onClick={() => onNavigate("applications")}>
+          <div className="statcard2-top">
+            <span className="tile-ic"><StatIcon kind="applications" /></span>
+            <span className="statcard2-arrow" aria-hidden="true">→</span>
+          </div>
+          <span className="statcard2-label">Applications</span>
+          <span className="statcard2-value">{student.applications.length} tracked</span>
         </button>
-        <button className="tile" onClick={() => onNavigate("resources")}>
-          <span className="tile-ic" aria-hidden="true">E</span>
-          <span className="tile-body">
-            <span className="tile-count">{student.eventsAttended.length}</span>
-            <span className="tile-label">Events attended</span>
-          </span>
-          <span className="tile-arrow" aria-hidden="true">→</span>
+        <button className="statcard2" onClick={() => onNavigate("resources")}>
+          <div className="statcard2-top">
+            <span className="tile-ic"><StatIcon kind="events" /></span>
+            <span className="statcard2-arrow" aria-hidden="true">→</span>
+          </div>
+          <span className="statcard2-label">Events</span>
+          <span className="statcard2-value">{student.eventsAttended.length} attended</span>
         </button>
       </div>
 

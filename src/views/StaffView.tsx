@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import type { AdvisingNote, StaffStudent } from "../lib/types";
-import { CATS, EXPERIENCE_CATEGORY_LABEL, ORDER, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, lastActivityFor, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
-import { addAdvisingNote, setFlag } from "../lib/storage";
+import type { AdvisingNote, CareerPath, StaffStudent, Stage } from "../lib/types";
+import { CATS, EXPERIENCE_CATEGORY_LABEL, ORDER, OUTREACH_STATUSES, OUTREACH_STATUS_LABEL, PATHS, STAGE_LABEL, SKILL_LEVEL_LABEL, band, bandColor, dominantPath, lastActivityFor, levelFor, pathLabel, scoreFor, toTimelineItems } from "../lib/scoring";
+import { addAdvisingNote, setOutreachStatus } from "../lib/storage";
 import { uid } from "../lib/seed";
 import { Dial, CatBars, StageBar } from "../components/Readiness";
 import { Timeline } from "../components/Timeline";
@@ -60,15 +60,19 @@ export function StaffView({
   setStudents,
   drill,
   setDrill,
+  staffAuthor,
 }: {
   students: StaffStudent[];
   setStudents: React.Dispatch<React.SetStateAction<StaffStudent[]>>;
   drill: string | null;
   setDrill: (id: string | null) => void;
+  staffAuthor: string;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [dir, setDir] = useState<Dir>("asc"); // asc = lowest score first (needs help on top)
   const [q, setQ] = useState("");
+  const [pathFilter, setPathFilter] = useState<CareerPath | "all">("all");
+  const [stageFilter, setStageFilter] = useState<Stage | "all">("all");
   const liveRef = useRef<HTMLDivElement>(null);
 
   const rows = useMemo(() => {
@@ -76,6 +80,7 @@ export function StaffView({
       ...s,
       ...scoreFor(s.skills, s.entries, { length: s.contactsCount }, s.grad),
       activity: lastActivityFor(s.skills, s.entries),
+      dominant: dominantPath(s.skills, s.entries),
     }));
     const cmp: Record<SortKey, (a: (typeof withScore)[0], b: (typeof withScore)[0]) => number> = {
       score: (a, b) => a.score - b.score,
@@ -90,9 +95,11 @@ export function StaffView({
 
   const filteredRows = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter((r) => r.name.toLowerCase().includes(term) || r.majors.some((m) => m.toLowerCase().includes(term)));
-  }, [rows, q]);
+    return rows
+      .filter((r) => !term || r.name.toLowerCase().includes(term) || r.majors.some((m) => m.toLowerCase().includes(term)))
+      .filter((r) => pathFilter === "all" || r.dominant?.key === pathFilter)
+      .filter((r) => stageFilter === "all" || r.stage === stageFilter);
+  }, [rows, q, pathFilter, stageFilter]);
 
   function sortBy(k: SortKey) {
     if (k === sortKey) setDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -104,19 +111,16 @@ export function StaffView({
   const ariaSort = (k: SortKey): "none" | "ascending" | "descending" =>
     sortKey !== k ? "none" : dir === "asc" ? "ascending" : "descending";
 
-  function toggleFlag(id: string, ev: React.MouseEvent) {
-    ev.stopPropagation();
+  function updateOutreach(id: string, status: (typeof OUTREACH_STATUSES)[number]) {
     const s = students.find((x) => x.id === id);
     if (!s) return;
-    const nextFlagged = !s.flagged;
-    setStudents((prev) => prev.map((x) => (x.id === id ? { ...x, flagged: nextFlagged } : x)));
-    if (liveRef.current)
-      liveRef.current.textContent = `${s.name} ${nextFlagged ? "flagged for outreach" : "unflagged"}.`;
-    setFlag(id, nextFlagged).catch((err) => console.error("Failed to update flag:", err));
+    setStudents((prev) => prev.map((x) => (x.id === id ? { ...x, outreachStatus: status } : x)));
+    if (liveRef.current) liveRef.current.textContent = `${s.name}: ${OUTREACH_STATUS_LABEL[status]}.`;
+    setOutreachStatus(id, status).catch((err) => console.error("Failed to update outreach status:", err));
   }
 
   function addNote(id: string, text: string) {
-    const note: AdvisingNote = { id: uid(), date: today(), note: text };
+    const note: AdvisingNote = { id: uid(), date: today(), note: text, author: staffAuthor };
     setStudents((prev) => prev.map((x) => (x.id === id ? { ...x, advisingNotes: [note, ...x.advisingNotes] } : x)));
     addAdvisingNote(id, note).catch((err) => console.error("Failed to add advising note:", err));
   }
@@ -128,7 +132,7 @@ export function StaffView({
         <StaffDrill
           student={s}
           onBack={() => setDrill(null)}
-          onFlag={(ev) => toggleFlag(s.id, ev)}
+          onOutreachChange={(status) => updateOutreach(s.id, status)}
           onAddNote={(text) => addNote(s.id, text)}
         />
       );
@@ -157,9 +161,28 @@ export function StaffView({
       <p className="eyebrow">Career Center · roster</p>
       <h1 className="page">Who needs outreach</h1>
       <p className="lede">
-        Students sorted by readiness so the ones falling behind surface first. Flag anyone you want
-        on your follow-up list, or open a student to see the detail.
+        Students sorted by readiness so the ones falling behind surface first. Track outreach status
+        on anyone you want on your follow-up list, or open a student to see the detail.
       </p>
+
+      <div className="row" style={{ gap: 14, flexWrap: "wrap", marginBottom: 4 }}>
+        <div className="field">
+          <label htmlFor="roster-path">Career path</label>
+          <select id="roster-path" value={pathFilter} onChange={(e) => setPathFilter(e.target.value as CareerPath | "all")}>
+            <option value="all">All paths</option>
+            {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="roster-stage">Stage</label>
+          <select id="roster-stage" value={stageFilter} onChange={(e) => setStageFilter(e.target.value as Stage | "all")}>
+            <option value="all">All stages</option>
+            {(["first-year", "sophomore", "junior", "senior"] as Stage[]).map((s) => (
+              <option key={s} value={s}>{STAGE_LABEL[s]}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <section className="sec" aria-labelledby="roster-h">
         <div className="sec-head">
@@ -248,15 +271,15 @@ export function StaffView({
                       {fmtActivity(r.activity)}
                     </span>
                   </td>
-                  <td>
-                    <button
-                      className="flagbtn"
-                      aria-pressed={r.flagged}
-                      onClick={(e) => toggleFlag(r.id, e)}
-                      aria-label={`${r.flagged ? "Remove outreach flag for" : "Flag for outreach:"} ${r.name}`}
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <select
+                      className="editrow-select"
+                      value={r.outreachStatus}
+                      onChange={(e) => updateOutreach(r.id, e.target.value as (typeof OUTREACH_STATUSES)[number])}
+                      aria-label={`Outreach status for ${r.name}`}
                     >
-                      {r.flagged ? "Flagged" : "Flag"}
-                    </button>
+                      {OUTREACH_STATUSES.map((s) => <option key={s} value={s}>{OUTREACH_STATUS_LABEL[s]}</option>)}
+                    </select>
                   </td>
                 </tr>
               );
@@ -273,16 +296,17 @@ export function StaffView({
 function StaffDrill({
   student,
   onBack,
-  onFlag,
+  onOutreachChange,
   onAddNote,
 }: {
   student: StaffStudent;
   onBack: () => void;
-  onFlag: (ev: React.MouseEvent) => void;
+  onOutreachChange: (status: (typeof OUTREACH_STATUSES)[number]) => void;
   onAddNote: (text: string) => void;
 }) {
   const { score, per, stage } = scoreFor(student.skills, student.entries, { length: student.contactsCount }, student.grad);
   const dom = dominantPath(student.skills, student.entries);
+  const activity = lastActivityFor(student.skills, student.entries);
   const b = band(score);
   const gaps = ORDER.map((k) => ({ k, need: per[k].target - per[k].n })).filter((g) => g.need > 0);
   const timelineItems = toTimelineItems(student.skills, student.entries);
@@ -335,9 +359,22 @@ function StaffDrill({
               Leaning toward <strong>{pathLabel(dom.key)}</strong> ({dom.n} tagged).
             </p>
           )}
-          <button className="flagbtn" aria-pressed={student.flagged} onClick={onFlag}>
-            {student.flagged ? "✓ On outreach list" : "Add to outreach list"}
-          </button>
+          <p style={{ marginTop: -4 }}>
+            <span className="status">
+              <span className="dot" style={{ background: activityColor(activity) }} />
+              Last active: {fmtActivity(activity)}
+            </span>
+          </p>
+          <div className="field" style={{ maxWidth: 220 }}>
+            <label htmlFor="d-outreach">Outreach status</label>
+            <select
+              id="d-outreach"
+              value={student.outreachStatus}
+              onChange={(e) => onOutreachChange(e.target.value as (typeof OUTREACH_STATUSES)[number])}
+            >
+              {OUTREACH_STATUSES.map((s) => <option key={s} value={s}>{OUTREACH_STATUS_LABEL[s]}</option>)}
+            </select>
+          </div>
         </div>
       </section>
 
@@ -427,6 +464,7 @@ function StaffDrill({
                 <span className="tag" style={{ background: "var(--paper-2)", color: "var(--ink-soft)" }}>{fmtNoteDate(n.date)}</span>
                 <span className="entry-main">
                   <span className="t">{n.note}</span>
+                  {n.author && <span className="m">— {n.author}</span>}
                 </span>
               </li>
             ))}

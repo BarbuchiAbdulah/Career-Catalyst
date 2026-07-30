@@ -55,7 +55,7 @@ export function LinkedinIcon() {
   );
 }
 
-type SubTab = "guides" | "events";
+type SubTab = "news" | "events" | "resources";
 
 export function ResourcesTab({
   student,
@@ -64,8 +64,10 @@ export function ResourcesTab({
   student: Student;
   onChange: (next: Student) => void;
 }) {
-  const [subTab, setSubTab] = useState<SubTab>("guides");
+  const [subTab, setSubTab] = useState<SubTab>("news");
   const [eventPathFilter, setEventPathFilter] = useState<CareerPath | "all">("all");
+  const [eventPage, setEventPage] = useState(0);
+  const EVENTS_PER_PAGE = 10;
   const liveRef = useRef<HTMLDivElement>(null);
 
   function announce(msg: string) {
@@ -83,6 +85,8 @@ export function ResourcesTab({
     .filter((e) => eventPathFilter === "all" || e.path === eventPathFilter)
     .sort((a, b) => a.date.localeCompare(b.date));
   const eventPaths = [...new Set(EVENTS.map((e) => e.path).filter(Boolean))] as Exclude<CareerPath, "">[];
+  const eventPageCount = Math.max(1, Math.ceil(sortedEvents.length / EVENTS_PER_PAGE));
+  const pagedEvents = sortedEvents.slice(eventPage * EVENTS_PER_PAGE, (eventPage + 1) * EVENTS_PER_PAGE);
 
   return (
     <>
@@ -135,11 +139,30 @@ export function ResourcesTab({
       )}
 
       <div className="subtabs" role="tablist" aria-label="Resources sections">
-        <button role="tab" aria-selected={subTab === "guides"} className={"subtab" + (subTab === "guides" ? " active" : "")} onClick={() => setSubTab("guides")}>Guides</button>
+        <button role="tab" aria-selected={subTab === "news"} className={"subtab" + (subTab === "news" ? " active" : "")} onClick={() => setSubTab("news")}>News</button>
         <button role="tab" aria-selected={subTab === "events"} className={"subtab" + (subTab === "events" ? " active" : "")} onClick={() => setSubTab("events")}>Events</button>
+        <button role="tab" aria-selected={subTab === "resources"} className={"subtab" + (subTab === "resources" ? " active" : "")} onClick={() => setSubTab("resources")}>Resources</button>
       </div>
 
-      {subTab === "guides" && (
+      {subTab === "news" && (
+        <section className="sec" aria-labelledby="art-h">
+          <div className="sec-head"><h2 id="art-h">From the Career Center</h2></div>
+          <div className="cardgrid">
+            {ARTICLES.map((a) => (
+              <div className="resourcecard" key={a.id}>
+                <h3>{a.title}</h3>
+                <p className="jobcard-blurb">{a.excerpt}</p>
+                {a.tag && <span className="pathchip">{pathLabel(a.tag)}</span>}
+                <a href={a.url} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline" style={{ marginTop: 8 }}>
+                  Read more
+                </a>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {subTab === "resources" && (
         <>
           <section className="sec" aria-labelledby="tmpl-h">
             <div className="sec-head"><h2 id="tmpl-h">Resume templates</h2></div>
@@ -157,22 +180,6 @@ export function ResourcesTab({
                     Browse real templates
                   </a>
                 </details>
-              ))}
-            </div>
-          </section>
-
-          <section className="sec" aria-labelledby="art-h">
-            <div className="sec-head"><h2 id="art-h">From the Career Center</h2></div>
-            <div className="cardgrid">
-              {ARTICLES.map((a) => (
-                <div className="resourcecard" key={a.id}>
-                  <h3>{a.title}</h3>
-                  <p className="jobcard-blurb">{a.excerpt}</p>
-                  {a.tag && <span className="pathchip">{pathLabel(a.tag)}</span>}
-                  <a href={a.url} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline" style={{ marginTop: 8 }}>
-                    Read more
-                  </a>
-                </div>
               ))}
             </div>
           </section>
@@ -201,37 +208,49 @@ export function ResourcesTab({
             <h2 id="evt-h">Upcoming events</h2>
             <span className="count">{attended.size} attended</span>
           </div>
-          <div className="filterrow" role="group" aria-label="Filter events by career path">
-            <button className={"filterchip" + (eventPathFilter === "all" ? " active" : "")} aria-pressed={eventPathFilter === "all"} onClick={() => setEventPathFilter("all")}>All</button>
-            {eventPaths.map((p) => (
-              <button key={p} className={"filterchip" + (eventPathFilter === p ? " active" : "")} aria-pressed={eventPathFilter === p} onClick={() => setEventPathFilter(p)}>
-                {pathLabel(p)}
-              </button>
-            ))}
+          <div className="field" style={{ maxWidth: 320, marginBottom: 12 }}>
+            <label htmlFor="evt-path">Filter by career path</label>
+            <select id="evt-path" value={eventPathFilter} onChange={(e) => { setEventPathFilter(e.target.value as CareerPath | "all"); setEventPage(0); }}>
+              <option value="all">All paths</option>
+              {eventPaths.map((p) => <option key={p} value={p}>{pathLabel(p)}</option>)}
+            </select>
           </div>
           {sortedEvents.length === 0 ? (
             <div className="empty">No events match this filter.</div>
           ) : (
-            <CarouselRow label="upcoming events">
-              {sortedEvents.map((e) => (
-                <div className="eventcard" key={e.id}>
-                  <div className="eventbanner">{e.path ? pathLabel(e.path) : "General"}</div>
-                  <div className="eventbody">
-                    <p className="jobcard-org" style={{ marginBottom: 4 }}>{fmtDate(e.date)} · {e.location}</p>
-                    <h3>{e.title}</h3>
-                    {e.blurb && <p className="jobcard-blurb">{e.blurb}</p>}
-                    <button
-                      className={"filterchip" + (attended.has(e.id) ? " active" : "")}
-                      aria-pressed={attended.has(e.id)}
-                      onClick={() => toggleEvent(e.id, e.title)}
-                      style={{ marginTop: 8 }}
-                    >
-                      {attended.has(e.id) ? "✓ Attended" : "Mark attended"}
-                    </button>
+            <>
+              <div className="cardgrid">
+                {pagedEvents.map((e) => (
+                  <div className="eventcard" key={e.id}>
+                    <div className="eventbanner">{e.path ? pathLabel(e.path) : "General"}</div>
+                    <div className="eventbody">
+                      <p className="jobcard-org" style={{ marginBottom: 4 }}>{fmtDate(e.date)} · {e.location}</p>
+                      <h3>{e.title}</h3>
+                      {e.blurb && <p className="jobcard-blurb">{e.blurb}</p>}
+                      <button
+                        className={"filterchip" + (attended.has(e.id) ? " active" : "")}
+                        aria-pressed={attended.has(e.id)}
+                        onClick={() => toggleEvent(e.id, e.title)}
+                        style={{ marginTop: 8 }}
+                      >
+                        {attended.has(e.id) ? "✓ Attended" : "Mark attended"}
+                      </button>
+                    </div>
                   </div>
+                ))}
+              </div>
+              {eventPageCount > 1 && (
+                <div className="row-between" style={{ marginTop: 16 }}>
+                  <button className="btn btn-sm btn-outline" disabled={eventPage === 0} onClick={() => setEventPage((p) => p - 1)}>
+                    ← Previous
+                  </button>
+                  <span className="count">Page {eventPage + 1} of {eventPageCount}</span>
+                  <button className="btn btn-sm btn-outline" disabled={eventPage >= eventPageCount - 1} onClick={() => setEventPage((p) => p + 1)}>
+                    Next →
+                  </button>
                 </div>
-              ))}
-            </CarouselRow>
+              )}
+            </>
           )}
           <p style={{ marginTop: 14 }}>
             <a href={CAREER_CENTER.newsAndEventsUrl} target="_blank" rel="noreferrer" className="linkbtn">

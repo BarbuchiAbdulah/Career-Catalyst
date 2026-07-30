@@ -171,7 +171,6 @@ export function NetworkTab({
           <h1 className="page">Your network</h1>
           <p className="lede">Mentors, alumni, recruiters, and industry contacts — plus alumni to discover and connect with.</p>
         </div>
-        {subTab === "connections" && <button className="btn" onClick={openAdd}>+ Add Contact</button>}
       </div>
 
       <div className="subtabs" role="tablist" aria-label="Network sections">
@@ -243,6 +242,7 @@ export function NetworkTab({
             aria-label="Search connections by name, company, or tag"
           />
         </div>
+        <button className="btn" onClick={openAdd}>+ Add Contact</button>
       </div>
 
       <div className="filterrow" role="group" aria-label="Filter connections by relationship">

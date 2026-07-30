@@ -63,7 +63,7 @@ h1.page{font-family:var(--font-site);font-weight:600;font-size:clamp(28px,4vw,40
 .cat small{color:var(--ink-soft)}
 
 .sec{margin-top:40px}
-.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;border-bottom:1px solid var(--paper-2);padding-bottom:10px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px;border-bottom:1px solid var(--paper-2);padding-bottom:6px}
 .sec-head h2{font-family:var(--font-site);font-weight:600;font-size:20px;margin:0}
 .sec-head .count{font-family:var(--font-site);font-size:12px;color:var(--ink-soft)}
 
@@ -77,7 +77,7 @@ h1.page{font-family:var(--font-site);font-weight:600;font-size:clamp(28px,4vw,40
 .btn{border:0;background:var(--orange-btn);color:#fff;font-weight:600;font-size:14px;padding:11px 20px;border-radius:10px;box-shadow:var(--shadow);text-decoration:none;display:inline-block}
 .btn:hover{filter:brightness(.92)}
 
-ul.entries{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.entries{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 ul.entries li{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--paper-2);border-radius:12px;padding:12px 16px}
 .tag{font-family:var(--font-site);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;flex:none}
 .tag.skill{background:#EDE7F6;color:#5B3FA6}
@@ -138,6 +138,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-betw
 .stagestep-label{font-size:13px;font-weight:600;color:var(--ink-soft)}
 .stagestep.done .stagestep-label{color:var(--ink)}
 .stagestep.here .stagestep-label{color:var(--orange-deep)}
+.stagestep-milestone{font-size:12px;color:var(--ink-soft)}
 .stagestep-exp{font-family:var(--font-site);font-size:11px;color:var(--ink-soft)}
 .stagestep::before{content:"";position:absolute;top:5px;left:12px;right:-8px;height:2px;background:var(--paper-2)}
 .stagestep:last-child::before{display:none}
@@ -286,11 +287,24 @@ ul.tl-items li{display:flex;align-items:center;gap:12px;background:var(--card);b
 .expcard-org{font-size:13.5px;color:var(--ink-soft);margin:2px 0 0}
 .expcard-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--ink-soft);margin:8px 0}
 .expcard-meta span{display:inline-flex;align-items:center;gap:4px}
-.expcard-actions{display:flex;gap:2px;flex:none}
 .expcard-iconbtn{border:0;background:transparent;color:var(--ink-soft);width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
 .expcard-iconbtn:hover{color:var(--warn);background:#F7E4DC}
-.expcard-iconbtn.chevron:hover{color:var(--orange-deep);background:var(--paper)}
-.expcard-iconbtn.chevron.open svg{transform:rotate(180deg)}
+
+/* "Show more" sits at the bottom-right edge of the card, opposite the title */
+.expcard-more{align-self:flex-end;display:flex;align-items:center;gap:4px;margin-top:8px;border:0;background:transparent;color:var(--ink-soft);font-size:12.5px;font-weight:600;padding:4px 2px;cursor:pointer}
+.expcard-more:hover{color:var(--orange-deep)}
+.expcard-more svg{transition:transform .15s}
+.expcard-more.open svg{transform:rotate(180deg)}
+
+/* ---- Experiences/Projects add form: fixed 2-col grid, predictable rows ---- */
+.expform{display:grid;grid-template-columns:1fr 1fr;gap:16px 14px;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.expform .field.full{grid-column:1/-1}
+.field-label{font-size:12px;font-weight:600;color:var(--ink-soft)}
+.field-hint{font-size:12px;color:var(--ink-soft)}
+.chipselect{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px}
+@media(max-width:720px){
+  .expform{grid-template-columns:1fr}
+}
 
 @media(max-width:920px){
   .app{grid-template-columns:1fr}
@@ -397,15 +411,16 @@ ul.entries.applist li.approw{gap:20px;flex-wrap:wrap;padding:14px 18px}
   .dashsplit .upcoming-block{order:2}
 }
 
-/* ============ Dashboard: clickable tally tiles ============ */
-.statcards.tally{grid-template-columns:repeat(2,1fr);max-width:520px}
-.tile{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow);text-align:left;width:100%}
-.tile:hover{border-color:var(--orange)}
+/* ============ Dashboard: unified stat grid (5 clickable cards) ============ */
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:20px}
+.statcard2{display:flex;flex-direction:column;gap:8px;text-align:left;background:var(--card);border:1px solid var(--paper-2);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);width:100%}
+.statcard2:hover{border-color:var(--orange)}
+.statcard2-top{display:flex;align-items:center;justify-content:space-between}
+.statcard2-arrow{color:var(--line);font-size:16px}
+.statcard2-label{font-weight:600;font-size:14px}
+.statcard2-value{font-family:var(--font-site);font-size:12px;color:var(--ink-soft)}
+.statcard2 .track{margin:2px 0 0}
 .tile-ic{width:44px;height:44px;border-radius:12px;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:19px;flex:none}
-.tile-body{flex:1;min-width:0;display:flex;flex-direction:column}
-.tile-count{font-family:var(--font-site);font-weight:700;font-size:20px;line-height:1.2}
-.tile-label{font-size:13px;color:var(--ink-soft)}
-.tile-arrow{color:var(--line);font-size:18px;flex:none}
 
 /* ============ Accent chip (ink+orange) — reused for interests, multi-select ============ */
 .pill.chip-accent{background:#FBEEE4;color:var(--orange-deep);font-weight:700;border:0;cursor:pointer}
@@ -440,6 +455,7 @@ ul.entries.applist li.approw{gap:20px;flex-wrap:wrap;padding:14px 18px}
 .evidencelist li{display:flex;align-items:baseline;gap:10px;padding:4px 0;font-size:13px}
 .ev-date{font-family:var(--font-site);font-size:11.5px;color:var(--line);min-width:78px;flex:none}
 .ev-desc{flex:1;color:var(--ink-soft)}
+.ev-linked{display:inline-block;margin-left:8px;font-size:11.5px;font-weight:600;color:var(--orange-deep);background:#FBEEE4;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .badge-sm-btn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:8px}
 .badge-sm-btn:hover{border-color:var(--orange);color:var(--orange-deep)}
 
@@ -454,6 +470,9 @@ li.editrow select,.editrow-select{font-family:inherit;font-size:13.5px;padding:8
 
 /* ============ Applications: sub-tabs, monogram, status dot ============ */
 .subtabs{display:flex;gap:20px;border-bottom:1px solid var(--paper-2);margin:20px 0 20px}
+/* A .sec directly after subtabs already gets its gap from subtabs' own bottom
+   margin above — .sec's default 40px top margin would double it up. */
+.subtabs + .sec{margin-top:0}
 .subtab{border:0;background:transparent;font-weight:600;font-size:14px;color:var(--ink-soft);padding:10px 2px;border-bottom:2px solid transparent}
 .subtab.active{color:var(--orange-deep);border-color:var(--orange)}
 .monogram{width:40px;height:40px;border-radius:10px;background:var(--ink);color:var(--orange);display:grid;place-items:center;font-family:var(--font-site);font-weight:700;font-size:13px;flex:none}
@@ -487,7 +506,6 @@ li.editrow select,.editrow-select{font-family:inherit;font-size:13.5px;padding:8
   .cardgrid{grid-template-columns:1fr}
   .profile-grid{grid-template-columns:1fr}
   .grid2col{grid-template-columns:1fr}
-  .statcards.tally{grid-template-columns:1fr}
   .statcards.quad{grid-template-columns:1fr}
   .pathlist-label{flex-basis:150px;font-size:12.5px}
 }

@@ -1,4 +1,4 @@
-import type { ExperienceCategory, ScoreCategory, Readiness, Band, BandKey, Stage, CareerPath, ContactRelationship, SkillLevel, TimelineItem } from "./types";
+import type { ExperienceCategory, ScoreCategory, Readiness, Band, BandKey, Stage, CareerPath, ContactRelationship, SkillLevel, TimelineItem, OutreachStatus } from "./types";
 
 // Category metadata, grounded in NACE career-readiness areas.
 // `base` is the SENIOR-year target; earlier stages scale down (see STAGE_FACTOR).
@@ -108,6 +108,26 @@ export const STAGE_LABEL: Record<Stage, string> = {
   sophomore: "Sophomore",
   junior: "Junior",
   senior: "Senior",
+};
+
+// A plain-English "what this stage is for" — turns the four-year arc into a
+// roadmap instead of just a progress ruler of abstract percentages.
+export const STAGE_MILESTONE: Record<Stage, string> = {
+  "first-year": "Explore your options",
+  sophomore: "Build core skills",
+  junior: "Land an internship",
+  senior: "Be ready to apply",
+};
+
+// --- Staff outreach workflow -------------------------------------------------
+
+export const OUTREACH_STATUSES: OutreachStatus[] = ["not-contacted", "reached-out", "responded", "scheduled"];
+
+export const OUTREACH_STATUS_LABEL: Record<OutreachStatus, string> = {
+  "not-contacted": "Not contacted",
+  "reached-out": "Reached out",
+  responded: "Responded",
+  scheduled: "Scheduled",
 };
 
 // Fraction of the senior-year target expected BY each stage. This is what makes

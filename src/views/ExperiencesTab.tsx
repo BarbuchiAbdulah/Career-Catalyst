@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerPath, Entry, ExperienceCategory, Student } from "../lib/types";
 import {
   ADVANCED_AT,
@@ -86,7 +86,7 @@ const emptyDraft = (category: ExperienceCategory): Omit<Entry, "id"> => ({
   link: undefined,
 });
 
-type SubTab = "experiences" | "projects" | "skills";
+export type SubTab = "experiences" | "projects" | "skills";
 type SortMode = "earliest" | "newest" | "az" | "level";
 
 function sortSkillsFirstDate(a: Student["skills"][number]) {
@@ -99,11 +99,19 @@ function sortSkillsLastDate(a: Student["skills"][number]) {
 export function ExperiencesTab({
   student,
   onChange,
+  initialSubTab,
 }: {
   student: Student;
   onChange: (next: Student) => void;
+  initialSubTab?: SubTab;
 }) {
-  const [subTab, setSubTab] = useState<SubTab>("experiences");
+  const [subTab, setSubTab] = useState<SubTab>(initialSubTab ?? "experiences");
+
+  // Lets Dashboard's stat cards deep-link straight to a specific subtab
+  // (e.g. Skills) instead of always landing on the default.
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]);
   const [q, setQ] = useState("");
   const [catFilter, setCatFilter] = useState<ExperienceCategory | "all">("all");
   const [formOpen, setFormOpen] = useState(false);
@@ -117,6 +125,7 @@ export function ExperiencesTab({
   const [openEvidenceFor, setOpenEvidenceFor] = useState<string | null>(null);
   const [evDate, setEvDate] = useState(today());
   const [evDesc, setEvDesc] = useState("");
+  const [evEntryId, setEvEntryId] = useState("");
   const [newSkillTitle, setNewSkillTitle] = useState("");
   const [newSkillPath, setNewSkillPath] = useState<CareerPath>("");
 
@@ -136,6 +145,26 @@ export function ExperiencesTab({
   const expEntries = useMemo(() => student.entries.filter((e) => (e.category ?? "other") !== "project"), [student.entries]);
   const projEntries = useMemo(() => student.entries.filter((e) => e.category === "project"), [student.entries]);
   const baseEntries = subTab === "projects" ? projEntries : expEntries;
+
+  // Skill evidence can optionally reference the Entry it came from — these
+  // two maps drive that link in both directions without storing it twice.
+  const entryTitleById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const en of student.entries) m.set(en.id, en.title);
+    return m;
+  }, [student.entries]);
+  const skillsByEntryId = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const s of student.skills) {
+      for (const ev of s.evidence) {
+        if (!ev.entryId) continue;
+        const arr = m.get(ev.entryId) ?? [];
+        if (!arr.includes(s.title)) arr.push(s.title);
+        m.set(ev.entryId, arr);
+      }
+    }
+    return m;
+  }, [student.skills]);
 
   const catCounts = useMemo(() => {
     const m = new Map<ExperienceCategory, number>();
@@ -246,11 +275,14 @@ export function ExperiencesTab({
     onChange({
       ...student,
       skills: student.skills.map((s) =>
-        s.id === skillId ? { ...s, evidence: [...s.evidence, { id: uid(), date: evDate, description: d }] } : s
+        s.id === skillId
+          ? { ...s, evidence: [...s.evidence, { id: uid(), date: evDate, description: d, entryId: evEntryId || undefined }] }
+          : s
       ),
     });
     setEvDesc("");
     setEvDate(today());
+    setEvEntryId("");
     setOpenEvidenceFor(null);
     announce("Evidence added.");
   }
@@ -352,7 +384,12 @@ export function ExperiencesTab({
                       {evOrdered.map((e) => (
                         <li key={e.id}>
                           <span className="ev-date">{fmt(e.date)}</span>
-                          <span className="ev-desc">{e.description || "—"}</span>
+                          <span className="ev-desc">
+                            {e.description || "—"}
+                            {e.entryId && entryTitleById.has(e.entryId) && (
+                              <span className="ev-linked">↳ {entryTitleById.get(e.entryId)}</span>
+                            )}
+                          </span>
                           <button className="del" onClick={() => delEvidence(s.id, e.id)} aria-label={`Remove evidence: ${e.description}`}>Remove</button>
                         </li>
                       ))}
@@ -367,12 +404,19 @@ export function ExperiencesTab({
                           <label htmlFor={`ev-desc-${s.id}`}>What happened</label>
                           <input id={`ev-desc-${s.id}`} value={evDesc} onChange={(e) => setEvDesc(e.target.value)} placeholder="e.g. Took an online course, used it on a project" autoFocus />
                         </div>
+                        <div className="field">
+                          <label htmlFor={`ev-entry-${s.id}`}>Used in <span style={{ fontWeight: 400 }}>(optional)</span></label>
+                          <select id={`ev-entry-${s.id}`} value={evEntryId} onChange={(e) => setEvEntryId(e.target.value)}>
+                            <option value="">— none —</option>
+                            {student.entries.map((en) => <option key={en.id} value={en.id}>{en.title}</option>)}
+                          </select>
+                        </div>
                         <button className="btn btn-sm" type="submit">Save</button>
                         <button className="btn btn-sm btn-outline" type="button" onClick={() => setOpenEvidenceFor(null)}>Cancel</button>
                       </form>
                     ) : (
                       <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                        <button className="badge-sm-btn" onClick={() => { setOpenEvidenceFor(s.id); setEvDesc(""); setEvDate(today()); }}>+ Add evidence</button>
+                        <button className="badge-sm-btn" onClick={() => { setOpenEvidenceFor(s.id); setEvDesc(""); setEvDate(today()); setEvEntryId(""); }}>+ Add evidence</button>
                         <button className="del" onClick={() => delSkill(s.id)} aria-label={`Remove skill ${s.title}`}>Remove skill</button>
                       </div>
                     )}
@@ -404,29 +448,37 @@ export function ExperiencesTab({
                   {editingId ? `Edit ${subTab === "projects" ? "project" : "experience"}` : `Add ${subTab === "projects" ? "a project" : "an experience"}`}
                 </h2>
               </div>
-              <form className="logbar" onSubmit={submitForm}>
-                <div className="field grow">
+              <form className="expform" onSubmit={submitForm}>
+                <div className="field full">
                   <label htmlFor="e-title">Title</label>
                   <input id="e-title" value={draft.title} onChange={(ev) => setDraft({ ...draft, title: ev.target.value })} placeholder={subTab === "projects" ? "e.g. Data Viz Dashboard" : "e.g. Marketing Intern"} autoFocus />
                 </div>
-                <div className="field">
-                  <label htmlFor="e-cat">Category</label>
-                  <select id="e-cat" value={draft.category ?? "other"} onChange={(ev) => setDraft({ ...draft, category: ev.target.value as ExperienceCategory })}>
-                    {EXPERIENCE_CATEGORIES.map((c) => <option key={c} value={c}>{EXPERIENCE_CATEGORY_LABEL[c]}</option>)}
-                  </select>
-                  <span style={{ display: "block", fontSize: 12.5, color: "var(--ink-soft)", marginTop: 4 }}>
-                    Changing this moves it between the Experiences and Projects tabs.
-                  </span>
+                <div className="field full">
+                  <span className="field-label">Category</span>
+                  <div className="chipselect" role="group" aria-label="Category">
+                    {EXPERIENCE_CATEGORIES.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        className={"filterchip" + ((draft.category ?? "other") === c ? " active" : "")}
+                        aria-pressed={(draft.category ?? "other") === c}
+                        onClick={() => setDraft({ ...draft, category: c })}
+                      >
+                        {EXPERIENCE_CATEGORY_LABEL[c]}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="field-hint">Changing this moves it between the Experiences and Projects tabs.</span>
                 </div>
-                <div className="field grow">
+                <div className="field">
                   <label htmlFor="e-org">Organization <span style={{ fontWeight: 400 }}>(optional)</span></label>
                   <input id="e-org" value={draft.organization ?? ""} onChange={(ev) => setDraft({ ...draft, organization: ev.target.value })} placeholder="e.g. Patagonia Portland" />
                 </div>
-                <div className="field grow">
+                <div className="field">
                   <label htmlFor="e-loc">Location <span style={{ fontWeight: 400 }}>(optional)</span></label>
                   <input id="e-loc" value={draft.location ?? ""} onChange={(ev) => setDraft({ ...draft, location: ev.target.value })} placeholder="e.g. Portland, OR" />
                 </div>
-                <div className="field grow">
+                <div className="field full">
                   <label htmlFor="e-start" className="row-between">
                     <span>Started – Ended</span>
                     <span className="inline-check">
@@ -458,20 +510,22 @@ export function ExperiencesTab({
                     {PATHS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
                   </select>
                 </div>
-                <div className="field grow">
+                <div className="field">
                   <label htmlFor="e-tools">Skills/tools used <span style={{ fontWeight: 400 }}>(optional)</span></label>
                   <input id="e-tools" value={toolsText} onChange={(ev) => setToolsText(ev.target.value)} placeholder="e.g. Data Analysis, Python" />
                 </div>
-                <div className="field grow">
+                <div className="field">
                   <label htmlFor="e-link">Link <span style={{ fontWeight: 400 }}>(optional — GitHub, portfolio, etc.)</span></label>
                   <input id="e-link" value={draft.link ?? ""} onChange={(ev) => setDraft({ ...draft, link: ev.target.value })} placeholder="e.g. github.com/you/project" />
                 </div>
-                <div className="field grow">
+                <div className="field full">
                   <label htmlFor="e-meta">Detail <span style={{ fontWeight: 400 }}>(optional)</span></label>
                   <input id="e-meta" value={draft.meta} onChange={(ev) => setDraft({ ...draft, meta: ev.target.value })} placeholder="Extra context or a short description" />
                 </div>
-                <button className="btn" type="submit">{editingId ? "Save" : subTab === "projects" ? "Add Project" : "Add Experience"}</button>
-                <button className="btn btn-outline" type="button" onClick={closeForm}>Cancel</button>
+                <div className="field full" style={{ flexDirection: "row", gap: 10 }}>
+                  <button className="btn" type="submit">{editingId ? "Save" : subTab === "projects" ? "Add Project" : "Add Experience"}</button>
+                  <button className="btn btn-outline" type="button" onClick={closeForm}>Cancel</button>
+                </div>
               </form>
             </section>
           )}
@@ -498,14 +552,6 @@ export function ExperiencesTab({
                         </h3>
                         {e.organization && <p className="expcard-org">{e.organization}</p>}
                       </div>
-                      <button
-                        className={"expcard-iconbtn chevron" + (open ? " open" : "")}
-                        onClick={() => toggleExpand(e.id)}
-                        aria-expanded={open}
-                        aria-label={open ? `Collapse ${e.title} details` : `Expand ${e.title} details`}
-                      >
-                        <ChevronIcon />
-                      </button>
                     </div>
                     <div className="expcard-meta">
                       {e.location && <span><PinIcon />{e.location}</span>}
@@ -518,12 +564,25 @@ export function ExperiencesTab({
                         {e.tools.length > 3 && <span className="pill chip-tool">+{e.tools.length - 3}</span>}
                       </div>
                     )}
+                    <button
+                      className={"expcard-more" + (open ? " open" : "")}
+                      onClick={() => toggleExpand(e.id)}
+                      aria-expanded={open}
+                      aria-label={open ? `Collapse ${e.title} details` : `Expand ${e.title} details`}
+                    >
+                      {open ? "Show less" : "Show more"} <ChevronIcon />
+                    </button>
                     {open && (
                       <div style={{ marginTop: 10 }}>
                         {e.meta && <p className="jobcard-blurb">{e.meta}</p>}
                         {e.path && (
                           <p style={{ marginTop: 8 }}>
                             <span className="pathchip">{pathLabel(e.path)}</span>
+                          </p>
+                        )}
+                        {skillsByEntryId.has(e.id) && (
+                          <p className="jobcard-blurb" style={{ marginTop: 8 }}>
+                            Skills built here: {skillsByEntryId.get(e.id)!.join(", ")}
                           </p>
                         )}
                         <div className="row" style={{ gap: 8, marginTop: 10 }}>

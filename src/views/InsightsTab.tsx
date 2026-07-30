@@ -32,7 +32,7 @@ export function InsightsTab({ students }: { students: StaffStudent[] }) {
   }, [rows]);
   const needingCount = bandCounts.mid + bandCounts.low;
   const avgScore = total ? Math.round(rows.reduce((sum, r) => sum + r.score, 0) / total) : 0;
-  const flaggedCount = rows.filter((r) => r.student.flagged).length;
+  const flaggedCount = rows.filter((r) => r.student.outreachStatus !== "not-contacted").length;
 
   // Cohort-wide average completion per category, weakest first — points at
   // which kind of programming (workshop/event/panel) would help the most students at once.
@@ -134,7 +134,7 @@ export function InsightsTab({ students }: { students: StaffStudent[] }) {
       <section className="sec" aria-labelledby="ins-band">
         <div className="sec-head">
           <h2 id="ins-band">Readiness distribution</h2>
-          <span className="count">{flaggedCount} flagged for outreach</span>
+          <span className="count">{flaggedCount} in outreach</span>
         </div>
         <div
           className="bandbar"

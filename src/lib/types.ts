@@ -83,6 +83,7 @@ export interface SkillEvidence {
   id: string;
   date: string; // ISO date
   description: string;
+  entryId?: string; // optional — links this evidence to the Entry (experience/project) it came from
 }
 
 export type SkillLevel = "beginner" | "intermediate" | "advanced";
@@ -120,7 +121,13 @@ export interface AdvisingNote {
   id: string;
   date: string; // ISO date
   note: string;
+  author?: string; // staff name + title at time of writing, e.g. "Jane Doe, Career Advisor"; "" for older notes
 }
+
+// --- Outreach: replaces the old plain flagged boolean with an actual workflow
+// state, so staff can track where they are with a student, not just whether
+// they're on the list at all.
+export type OutreachStatus = "not-contacted" | "reached-out" | "responded" | "scheduled";
 
 // --- To-do: manual items, alongside computed/dismissible suggestions ---------
 
@@ -138,6 +145,7 @@ export interface Student {
   id: string; // equals the Supabase Auth user's id
   role: Role;
   name: string;
+  title: string; // staff only — their position/job title, e.g. "Career Advisor"; always "" for students
   grad: string; // graduation year, e.g. "2027"
   majors: string[]; // double majors supported
   minors: string[];
@@ -146,7 +154,7 @@ export interface Student {
   resumeUrl: string; // link, not a file — there's no backend to host a binary
   linkedin: string;
   avatarUrl: string; // Supabase Storage public URL; "" falls back to initials
-  flagged: boolean; // staff outreach flag
+  outreachStatus: OutreachStatus; // staff outreach workflow state
   skills: Skill[];
   entries: Entry[]; // experience only — see Skill/Contact above
   contacts: Contact[];
@@ -202,7 +210,7 @@ export interface StaffStudent {
   interests: string[];
   headline: string;
   avatarUrl: string;
-  flagged: boolean;
+  outreachStatus: OutreachStatus;
   skills: StaffSkillView[];
   entries: StaffEntryView[];
   contactsCount: number; // NOT an array — see staff_roster(), contacts are count-only

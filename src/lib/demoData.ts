@@ -8,6 +8,7 @@ import { uid } from "./seed";
 export function demoStudentFields(): Omit<Student, "id" | "role" | "onboarded"> {
   return {
     name: "Jordan Reyes",
+    title: "",
     grad: "2027",
     majors: ["Environmental Studies"],
     minors: ["Data Science"],
@@ -16,7 +17,7 @@ export function demoStudentFields(): Omit<Student, "id" | "role" | "onboarded"> 
     resumeUrl: "",
     linkedin: "linkedin.com/in/jordanreyes",
     avatarUrl: "",
-    flagged: false,
+    outreachStatus: "not-contacted",
     skills: [
       {
         id: uid(),

@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import type { AdvisingNote, Contact, Entry, Student, StaffStudent } from "./types";
+import type { AdvisingNote, Contact, Entry, Student, StaffStudent, OutreachStatus } from "./types";
 import { demoStudentFields } from "./demoData";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -10,6 +10,7 @@ interface StudentRow {
   id: string;
   role: Student["role"];
   name: string;
+  title: string;
   grad: string;
   majors: string[];
   minors: string[];
@@ -18,7 +19,7 @@ interface StudentRow {
   resume_url: string;
   linkedin: string;
   avatar_url: string;
-  flagged: boolean;
+  outreach_status: OutreachStatus;
   skills: Student["skills"];
   entries: unknown[];
   contacts: Student["contacts"];
@@ -44,7 +45,7 @@ interface StaffRosterRow {
   interests: string[];
   headline: string;
   avatar_url: string;
-  flagged: boolean;
+  outreach_status: OutreachStatus;
   skills: StaffStudent["skills"];
   entries: StaffStudent["entries"];
   contacts_count: number;
@@ -104,6 +105,7 @@ function fromRow(row: StudentRow): Student {
     id: row.id,
     role: row.role,
     name: row.name,
+    title: row.title,
     grad: row.grad,
     majors: row.majors,
     minors: row.minors,
@@ -112,7 +114,7 @@ function fromRow(row: StudentRow): Student {
     resumeUrl: row.resume_url,
     linkedin: row.linkedin,
     avatarUrl: row.avatar_url,
-    flagged: row.flagged,
+    outreachStatus: row.outreach_status,
     skills: row.skills,
     entries,
     contacts,
@@ -136,7 +138,7 @@ function fromStaffRow(row: StaffRosterRow): StaffStudent {
     interests: row.interests,
     headline: row.headline,
     avatarUrl: row.avatar_url,
-    flagged: row.flagged,
+    outreachStatus: row.outreach_status,
     skills: row.skills,
     entries: row.entries,
     contactsCount: row.contacts_count,
@@ -149,6 +151,7 @@ function fromStaffRow(row: StaffRosterRow): StaffStudent {
 function toRow(s: Student) {
   return {
     name: s.name,
+    title: s.title,
     grad: s.grad,
     majors: s.majors,
     minors: s.minors,
@@ -157,7 +160,7 @@ function toRow(s: Student) {
     resume_url: s.resumeUrl,
     linkedin: s.linkedin,
     avatar_url: s.avatarUrl,
-    flagged: s.flagged,
+    outreach_status: s.outreachStatus,
     skills: s.skills,
     entries: s.entries,
     contacts: s.contacts,
@@ -190,8 +193,8 @@ export async function fetchStaffRoster(): Promise<StaffStudent[]> {
 
 // Marks the signed-in user's own onboarding flag so the first-login welcome
 // modal doesn't reappear. Direct self-row update via students_update_self
-// RLS — unlike setFlag/addAdvisingNote this never touches another row, so no
-// RPC is needed.
+// RLS — unlike setOutreachStatus/addAdvisingNote this never touches another
+// row, so no RPC is needed.
 export async function setOnboarded(userId: string): Promise<void> {
   const { error } = await supabase.from("students").update({ onboarded: true }).eq("id", userId);
   if (error) throw error;
@@ -202,21 +205,23 @@ export async function upsertMe(next: Student): Promise<void> {
   if (error) throw error;
 }
 
-// Staff-only — goes through the set_student_flag RPC (security definer) so a
-// staff account never gets a blanket UPDATE grant on other students' rows.
-export async function setFlag(studentId: string, flagged: boolean): Promise<void> {
-  const { error } = await supabase.rpc("set_student_flag", { target_id: studentId, is_flagged: flagged });
+// Staff-only — goes through the set_outreach_status RPC (security definer) so
+// a staff account never gets a blanket UPDATE grant on other students' rows.
+export async function setOutreachStatus(studentId: string, status: OutreachStatus): Promise<void> {
+  const { error } = await supabase.rpc("set_outreach_status", { target_id: studentId, status });
   if (error) throw error;
 }
 
 // Staff-only — goes through the add_advising_note RPC (security definer) for
-// the same reason setFlag does: no blanket UPDATE grant on other students' rows.
+// the same reason setOutreachStatus does: no blanket UPDATE grant on other
+// students' rows. author_name is the writing staff member's own name+title.
 export async function addAdvisingNote(studentId: string, note: AdvisingNote): Promise<void> {
   const { error } = await supabase.rpc("add_advising_note", {
     target_id: studentId,
     note_id: note.id,
     note_date: note.date,
     note_text: note.note,
+    author_name: note.author ?? "",
   });
   if (error) throw error;
 }
@@ -234,7 +239,7 @@ export async function resetMe(userId: string): Promise<Student> {
     resume_url: "",
     linkedin: "",
     avatar_url: "",
-    flagged: false,
+    outreach_status: "not-contacted",
     skills: [],
     entries: [],
     contacts: [],

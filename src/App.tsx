@@ -6,6 +6,7 @@ import { fetchMe, fetchStaffRoster, upsertMe, resetMe, loadDemoData, setOnboarde
 import { scoreFor, band, bandColor } from "./lib/scoring";
 import { DashboardTab } from "./views/DashboardTab";
 import { ExperiencesTab } from "./views/ExperiencesTab";
+import type { SubTab as ExperiencesSubTab } from "./views/ExperiencesTab";
 import { NetworkTab } from "./views/NetworkTab";
 import { ApplicationsTab } from "./views/ApplicationsTab";
 import { ResourcesTab } from "./views/ResourcesTab";
@@ -60,6 +61,7 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(false);
 
   const [studentPage, setStudentPage] = useState<StudentPage>("dashboard");
+  const [experiencesSubTab, setExperiencesSubTab] = useState<ExperiencesSubTab | undefined>(undefined);
   const [staffPage, setStaffPage] = useState<StaffPage>("roster");
   const [showSettings, setShowSettings] = useState(false);
   const [drill, setDrill] = useState<string | null>(null);
@@ -107,9 +109,10 @@ export default function App() {
     }, 500);
   }
 
-  function goToPage(p: StudentPage) {
+  function goToPage(p: StudentPage, subTab?: ExperiencesSubTab) {
     setStudentPage(p);
     setShowSettings(false);
+    if (p === "experiences") setExperiencesSubTab(subTab);
   }
   function goToStaffPage(p: StaffPage) {
     setStaffPage(p);
@@ -208,17 +211,6 @@ export default function App() {
                   <Icon d={item.icon} /> {item.label}
                 </button>
               ))}
-              <button type="button" className="side-me" onClick={openSettings} aria-label="Open your profile in Settings">
-                <div className="side-me-avatar" aria-hidden="true">
-                  {me.avatarUrl ? <img src={me.avatarUrl} alt="" /> : me.name.charAt(0) || "?"}
-                </div>
-                <div className="side-me-text">
-                  <span className="side-me-name">{me.name || "You"}</span>
-                  <span className="side-me-sub" style={{ color: bandColor(meBand.key) }}>
-                    {meScore}/100 · {meBand.label}
-                  </span>
-                </div>
-              </button>
             </>
           ) : (
             <>
@@ -239,6 +231,19 @@ export default function App() {
 
         <div className="side-foot">
           <p className="side-label">Settings</p>
+          {role === "student" && (
+            <button type="button" className="side-me" onClick={openSettings} aria-label="Open your profile in Settings">
+              <div className="side-me-avatar" aria-hidden="true">
+                {me.avatarUrl ? <img src={me.avatarUrl} alt="" /> : me.name.charAt(0) || "?"}
+              </div>
+              <div className="side-me-text">
+                <span className="side-me-name">{me.name || "You"}</span>
+                <span className="side-me-sub" style={{ color: bandColor(meBand.key) }}>
+                  {meScore}/100 · {meBand.label}
+                </span>
+              </div>
+            </button>
+          )}
           <button className={"navitem" + (showSettings ? " active" : "")} onClick={openSettings} aria-current={showSettings}>
             <Icon d={I.cog} /> Settings
           </button>
@@ -284,7 +289,7 @@ export default function App() {
           studentPage === "dashboard" ? (
             <DashboardTab student={me} onChange={updateMe} onNavigate={goToPage} />
           ) : studentPage === "experiences" ? (
-            <ExperiencesTab student={me} onChange={updateMe} />
+            <ExperiencesTab student={me} onChange={updateMe} initialSubTab={experiencesSubTab} />
           ) : studentPage === "network" ? (
             <NetworkTab student={me} onChange={updateMe} />
           ) : studentPage === "applications" ? (
@@ -295,7 +300,13 @@ export default function App() {
         ) : staffPage === "insights" ? (
           <InsightsTab students={roster} />
         ) : (
-          <StaffView students={roster} setStudents={setRoster} drill={drill} setDrill={setDrill} />
+          <StaffView
+            students={roster}
+            setStudents={setRoster}
+            drill={drill}
+            setDrill={setDrill}
+            staffAuthor={me.name + (me.title ? `, ${me.title}` : "")}
+          />
         )}
       </main>
     </div>

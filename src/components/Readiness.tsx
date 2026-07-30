@@ -1,5 +1,5 @@
 import type { Readiness, Stage } from "../lib/types";
-import { band, bandColor, CATS, ORDER, STAGE_LABEL, STAGE_FACTOR } from "../lib/scoring";
+import { band, bandColor, CATS, ORDER, STAGE_LABEL, STAGE_FACTOR, STAGE_MILESTONE } from "../lib/scoring";
 
 export function Dial({ score, size = 180 }: { score: number; size?: number }) {
   const b = band(score);
@@ -76,6 +76,7 @@ export function StageBar({ stage }: { stage: Stage }) {
         <div key={s} className={"stagestep" + (i <= idx ? " done" : "") + (i === idx ? " here" : "")}>
           <span className="stagestep-dot" aria-hidden="true" />
           <span className="stagestep-label">{STAGE_LABEL[s]}</span>
+          <span className="stagestep-milestone">{STAGE_MILESTONE[s]}</span>
           <span className="stagestep-exp">{Math.round(STAGE_FACTOR[s] * 100)}%</span>
         </div>
       ))}

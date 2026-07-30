@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import type { Student } from "../lib/types";
 import { supabase } from "../lib/supabaseClient";
 import { MAJORS, MINORS } from "../lib/seed";
+import { band, bandColor, scoreFor } from "../lib/scoring";
 
 // A search-and-check multi-select with removable chips — used for majors and
 // minors, both of which can have more than one selection and a long real list.
@@ -85,6 +86,9 @@ export function SettingsView({
   const [avatarBusy, setAvatarBusy] = useState(false);
   const liveRef = useRef<HTMLDivElement>(null);
 
+  const { score } = scoreFor(student.skills, student.entries, student.contacts, student.grad);
+  const b = band(score);
+
   function announce(msg: string) {
     if (liveRef.current) liveRef.current.textContent = msg;
   }
@@ -127,9 +131,7 @@ export function SettingsView({
       <p className="lede">Signed in as {email}.</p>
 
       {student.role === "student" && (
-      <section className="sec" aria-labelledby="profile-h">
-        <div className="sec-head"><h2 id="profile-h">Your profile</h2></div>
-
+      <section className="sec">
         <div className="profile-header">
           <div className="profileavatar" aria-hidden="true">
             {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : student.name.charAt(0) || "?"}
@@ -137,6 +139,10 @@ export function SettingsView({
           <div>
             <div className="profile-header-name">{student.name || "Your name"}</div>
             <div className="profile-header-sub">Class of {student.grad || "—"}</div>
+            <span className={"pill " + b.cls} style={{ marginTop: 6 }}>
+              <span className="dot" style={{ background: bandColor(b.key) }} />
+              {score}/100 · {b.label}
+            </span>
           </div>
           <div className="profile-header-photo">
             <label htmlFor="settings-avatar-input" className="badge-sm-btn" style={{ cursor: "pointer" }}>
@@ -194,6 +200,43 @@ export function SettingsView({
       </section>
       )}
 
+      {student.role === "staff" && (
+      <section className="sec">
+        <div className="profile-header">
+          <div className="profileavatar" aria-hidden="true">
+            {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : student.name.charAt(0) || "?"}
+          </div>
+          <div>
+            <div className="profile-header-name">{student.name || "Your name"}</div>
+            <div className="profile-header-sub">{student.title || "Career Center staff"}</div>
+          </div>
+          <div className="profile-header-photo">
+            <label htmlFor="settings-avatar-input" className="badge-sm-btn" style={{ cursor: "pointer" }}>
+              {avatarBusy ? "Uploading…" : "Change photo"}
+            </label>
+            <input
+              id="settings-avatar-input"
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="sr-only"
+              disabled={avatarBusy}
+            />
+          </div>
+        </div>
+        <div className="profile-grid">
+          <div className="field grow">
+            <label htmlFor="p-name">Name</label>
+            <input id="p-name" value={student.name} onChange={(e) => field("name", e.target.value)} placeholder="Your full name" />
+          </div>
+          <div className="field grow">
+            <label htmlFor="p-title">Position</label>
+            <input id="p-title" value={student.title} onChange={(e) => field("title", e.target.value)} placeholder="e.g. Career Advisor" />
+          </div>
+        </div>
+      </section>
+      )}
+
       <section className="sec" aria-labelledby="account-h">
         <div className="sec-head"><h2 id="account-h">Account</h2></div>
         <button className="btn btn-outline" onClick={onSignOut}>
@@ -201,6 +244,7 @@ export function SettingsView({
         </button>
       </section>
 
+      {student.role === "student" && (
       <section className="sec" aria-labelledby="data-h">
         <div className="sec-head"><h2 id="data-h">Your data</h2></div>
         <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
@@ -212,6 +256,7 @@ export function SettingsView({
           </button>
         </div>
       </section>
+      )}
 
       <div ref={liveRef} className="sr-only" aria-live="polite"></div>
     </>

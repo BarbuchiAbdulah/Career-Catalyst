@@ -50,15 +50,16 @@ function initials(name: string): string {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-// Real logo when we know the org's domain (a small public favicon-style
-// lookup, not something this app hosts), falling back to the monogram the
+// Real logo when we know the org's domain (Google's public favicon lookup —
+// no API key, no rate-limit surprises, unlike Clearbit's logo API which
+// started failing even for real domains), falling back to the monogram the
 // instant it 404s — so a missing/broken logo never breaks the card.
 function OrgLogo({ name, domain }: { name: string; domain?: string }) {
   const [broken, setBroken] = useState(false);
   if (!domain || broken) return <span className="monogram">{initials(name)}</span>;
   return (
     <span className="monogram monogram-img">
-      <img src={`https://logo.clearbit.com/${domain}`} alt="" onError={() => setBroken(true)} />
+      <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`} alt="" onError={() => setBroken(true)} />
     </span>
   );
 }
