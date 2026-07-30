@@ -113,7 +113,10 @@ create trigger on_auth_user_created
 
 -- Lets staff move another student along the outreach workflow without a
 -- blanket UPDATE grant on the whole table (RLS above only allows self-updates).
--- Replaces the old set_student_flag boolean toggle with an actual status.
+-- Replaces the old set_student_flag boolean toggle with an actual status —
+-- different name, so "create or replace" wouldn't touch the old one; drop it
+-- explicitly so a dead function doesn't linger in the database.
+drop function if exists public.set_student_flag(uuid, boolean);
 create or replace function public.set_outreach_status(target_id uuid, status text)
 returns void
 language plpgsql
@@ -137,7 +140,13 @@ $$;
 -- and passed as plain text, so this doesn't depend on gen_random_uuid()/
 -- pgcrypto being enabled on the target project. author_name is the writing
 -- staff member's own name+title, captured at write time so it survives even
--- if their profile changes later.
+-- if their profile changes later. author_name was added as a new trailing
+-- parameter — Postgres treats a different argument count as a different
+-- function, so "create or replace" would leave the old 4-arg version behind
+-- as a second overload (a real risk: PostgREST can fail to pick between
+-- overloads of the same name) rather than replacing it. Drop the old exact
+-- signature first.
+drop function if exists public.add_advising_note(uuid, text, text, text);
 create or replace function public.add_advising_note(target_id uuid, note_id text, note_date text, note_text text, author_name text default '')
 returns void
 language plpgsql
@@ -224,6 +233,10 @@ $$;
 -- security definer + the is_staff() guard mirrors set_outreach_status/
 -- add_advising_note above — a genuine second gate, not just reliance on the
 -- students_select RLS policy already allowing staff the row.
+-- "create or replace" can't change a returns-table function's column
+-- signature (only its body) — drop first so this stays safe to re-run even
+-- across changes to the returned shape (e.g. flagged boolean → outreach_status text).
+drop function if exists public.staff_roster();
 create or replace function public.staff_roster()
 returns table (
   id uuid,

@@ -130,13 +130,23 @@ export default function App() {
   }
   async function reset() {
     if (!me || !confirm("Reset your data to blank? This can't be undone.")) return;
-    const blank = await resetMe(me.id);
-    setMe(blank);
+    try {
+      const blank = await resetMe(me.id);
+      setMe(blank);
+    } catch (err) {
+      console.error("Failed to reset data:", err);
+      alert("Couldn't reset your data. Please try again.");
+    }
   }
   async function loadDemo() {
     if (!me || !confirm("Load demo data? This will overwrite your current profile.")) return;
-    const demo = await loadDemoData(me.id);
-    setMe(demo);
+    try {
+      const demo = await loadDemoData(me.id);
+      setMe(demo);
+    } catch (err) {
+      console.error("Failed to load demo data:", err);
+      alert("Couldn't load demo data. Please try again.");
+    }
   }
   function dismissWelcome() {
     setShowWelcome(false);

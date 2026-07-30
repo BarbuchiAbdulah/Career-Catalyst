@@ -121,25 +121,29 @@ src/
     types.ts      # Entry, Student, Application, AdvisingNote, ContactRelationship, etc.
     scoring.ts    # CATS, WEIGHT, PATHS, RELATIONSHIPS, scoreFor(), band(), stageFor()
     seed.ts       # uid() + real L&C MAJORS/MINORS lists — no demo-student generator anymore
-    storage.ts    # Supabase reads/writes: fetchMe/fetchRoster/upsertMe/setFlag/addAdvisingNote/
-                  # resetMe/loadDemoData — no localStorage, every account's data is its own
+    storage.ts    # Supabase reads/writes: fetchMe/fetchStaffRoster (redacted RPC)/upsertMe/
+                  # setOutreachStatus/addAdvisingNote/setOnboarded/resetMe/loadDemoData —
+                  # no localStorage, every account's data is its own
     demoData.ts   # one realistic fully-populated demo profile, loaded via Settings on demand
     generate.ts   # resume bullets / LinkedIn blurb text, generated live from logged data
     content.ts    # static Career-Center content: JOBS, EVENTS, RESUME_TEMPLATES, ARTICLES,
                   # PATH_INFO, ALUMNI_DIRECTORY, CAREER_SERVICES — no live data source
   components/
-    Readiness.tsx # <Dial>, <CatBars>, <StageBar> — shared by both views
-    Timeline.tsx  # <Timeline> — entries grouped by term into the four-year spine
+    Readiness.tsx    # <Dial>, <CatBars>, <StageBar> — shared by both views
+    Timeline.tsx     # <Timeline> — entries grouped by term into the four-year spine
+    WelcomeModal.tsx # one-time first-login tutorial (student/staff variants), gated on
+                     # Student.onboarded — see App.tsx and storage.ts's setOnboarded
   views/
     DashboardTab.tsx     # read-only overview: greeting, stat cards, tallies, timeline
     ExperiencesTab.tsx   # sub-tabs: Experiences / Projects / Skills — card grid, add+edit form
     NetworkTab.tsx       # sub-tabs: Your connections / Explore alumni — card grid, add+edit form
     ApplicationsTab.tsx  # explore seeded JOBS + personal application tracker
     ResourcesTab.tsx     # templates, articles, paths, events, advising notes (alumni moved to Network)
-    StaffView.tsx        # roster table + StaffDrill (student detail + advising notes)
+    StaffView.tsx        # roster table + StaffDrill (student detail + advising notes) — reads the
+                          # server-redacted StaffStudent shape, never a student's raw contacts/entries
     InsightsTab.tsx      # staff-facing cohort aggregates: distribution, stage, paths, engagement
     SettingsView.tsx     # avatar + identity fields (student-only) + account/data actions (both roles)
-    LoginView.tsx         # split card + hand-drawn otter illustration, @lclark.edu email/password only
+    LoginView.tsx         # split card + L&C otter logo (src/assets/lc-otter.png), @lclark.edu email/password only
   App.tsx         # shell: role-scoped nav, studentPage/staffPage/showSettings state, persistence
   main.tsx        # entry point
   styles.css      # all styles; design tokens are CSS vars in :root
