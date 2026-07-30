@@ -26,6 +26,7 @@ workflow and drill into any student for the detail.
 ## Two views
 
 - **Student**:
+![Student View](docs/studentView.png)
   - **Dashboard** — a four-year stage bar with a milestone per stage, readiness ring, five clickable
     stat cards (skills/experience/network/applications/events), upcoming deadlines & events, a
     to-do list, and a searchable timeline of everything logged.
@@ -39,7 +40,9 @@ workflow and drill into any student for the detail.
     **Events** (mark-attended, career-path filter), and **Resources** (resume templates + explore
     career paths).
   - **Settings** — photo, majors/minors, goal, interests, resume link, and LinkedIn.
+
 - **Career Center staff**:
+![Staff View](docs/staffView.png)
   - **Roster** — sorted by readiness (lowest first), filterable by career path and class stage, an
     **outreach status** per student (not contacted → reached out → responded → scheduled), and a
     per-student drill-in with gaps framed as talking points, their full timeline, and advising
